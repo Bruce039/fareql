@@ -20,12 +20,37 @@
   * { box-sizing: border-box; }
   body {
     margin: 0; color: var(--ink); font: 15px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
-    background:
-      radial-gradient(1200px 500px at 85% -10%, var(--taxi-soft), transparent 60%),
-      radial-gradient(900px 500px at -10% 10%, var(--sky-soft), transparent 55%),
-      var(--paper);
+    background: var(--paper);
     min-height: 100vh;
   }
+  /* living background: soft colour fields, a city-map grid and two roads with taxis */
+  body::before {
+    content: ""; position: fixed; inset: -25%; z-index: -3; pointer-events: none;
+    background:
+      radial-gradient(38% 32% at 18% 18%, rgba(255, 203, 61, 0.42), transparent 70%),
+      radial-gradient(34% 30% at 86% 12%, rgba(47, 111, 224, 0.20), transparent 70%),
+      radial-gradient(40% 34% at 82% 78%, rgba(31, 157, 116, 0.18), transparent 70%),
+      radial-gradient(36% 34% at 14% 84%, rgba(124, 92, 214, 0.16), transparent 70%),
+      radial-gradient(30% 26% at 52% 50%, rgba(255, 203, 61, 0.14), transparent 70%);
+    filter: blur(24px);
+    animation: drift 28s ease-in-out infinite alternate;
+  }
+  @keyframes drift { to { transform: translate3d(5%, -4%, 0) rotate(8deg) scale(1.06); } }
+  body::after {
+    content: ""; position: fixed; inset: 0; z-index: -2; pointer-events: none;
+    background-image:
+      linear-gradient(rgba(36, 33, 27, 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(36, 33, 27, 0.05) 1px, transparent 1px);
+    background-size: 46px 46px;
+    -webkit-mask-image: radial-gradient(ellipse 80% 70% at 50% 35%, #000 25%, transparent 80%);
+    mask-image: radial-gradient(ellipse 80% 70% at 50% 35%, #000 25%, transparent 80%);
+  }
+  .city { position: fixed; inset: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; opacity: 0.5; }
+  .city .lane { animation: lane 2.4s linear infinite; }
+  @keyframes lane { to { stroke-dashoffset: -60; } }
+  footer { padding: 26px 0 40px; display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; color: var(--muted); font-size: 13px; }
+  footer a { color: var(--ink); font-weight: 600; text-decoration: none; border-bottom: 2px solid var(--taxi); }
+  footer .links { display: flex; gap: 16px; flex-wrap: wrap; }
   .wrap { max-width: 1240px; margin: 0 auto; padding: 0 24px; }
   @media (max-width: 720px) { .wrap { padding: 0 16px; } }
 
@@ -254,6 +279,19 @@
 </style>
 </head>
 <body>
+<svg class="city" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+  <defs>
+    <path id="road1" d="M -80 190 C 260 70, 520 330, 780 230 S 1200 70, 1520 250" />
+    <path id="road2" d="M -80 760 C 240 620, 560 880, 860 730 S 1260 600, 1520 720" />
+    <g id="taxi"><rect x="-15" y="-8" width="30" height="16" rx="5" fill="#ffcb3d" stroke="#24211b" stroke-width="2"/><rect x="-5" y="-12" width="10" height="5" rx="1.5" fill="#24211b"/><rect x="3" y="-5" width="8" height="10" rx="2" fill="#e7f0ff"/></g>
+  </defs>
+  <use href="#road1" fill="none" stroke="#efe6d2" stroke-width="30" stroke-linecap="round" />
+  <use href="#road1" class="lane" fill="none" stroke="#ffcb3d" stroke-width="3" stroke-dasharray="16 14" />
+  <use href="#road2" fill="none" stroke="#efe6d2" stroke-width="30" stroke-linecap="round" />
+  <use href="#road2" class="lane" fill="none" stroke="#ffcb3d" stroke-width="3" stroke-dasharray="16 14" />
+  <use href="#taxi"><animateMotion dur="26s" repeatCount="indefinite" rotate="auto"><mpath href="#road1" /></animateMotion></use>
+  <use href="#taxi"><animateMotion dur="34s" begin="-12s" repeatCount="indefinite" rotate="auto"><mpath href="#road2" /></animateMotion></use>
+</svg>
 <div class="wrap">
   <div class="top">
     <div class="logo">
@@ -350,6 +388,10 @@
       </div>
     </section>
   </main>
+  <footer>
+    <span>FareQL — GraphQL pay-per-operation over <a href="https://mpp.dev" target="_blank" rel="noopener">MPP</a>. Demo payments only; no money moves on this page.</span>
+    <span class="links"><a href="https://www.npmjs.com/package/fareql" target="_blank" rel="noopener">npm</a><a href="https://github.com/Bruce039/fareql" target="_blank" rel="noopener">GitHub</a><code>npm install fareql</code></span>
+  </footer>
 </div>
 
 <script>
@@ -457,6 +499,7 @@ function route(states) {
 
 // ── motion: coins, flip, tilt, reveal
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches
+if (reduced) document.querySelector('.city')?.pauseAnimations?.()
 function coins(n = 7) {
   if (reduced) return
   const meter = document.querySelector('.meter')
