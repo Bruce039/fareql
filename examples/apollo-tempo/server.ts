@@ -1,4 +1,4 @@
-// The same priced API on Apollo Server 5 (standalone), Moderato testnet.
+// The same priced API on Apollo Server 5 (standalone), on Tempo (mainnet by default, TEMPO_NETWORK=testnet for Moderato).
 //
 //   MPP_SECRET_KEY=$(openssl rand -hex 32) RECIPIENT=0x... npx tsx examples/apollo-tempo/server.ts
 import { ApolloServer } from '@apollo/server'
@@ -37,9 +37,10 @@ const resolvers = {
 const mppx = Mppx.create({
   methods: [
     tempo.charge({
-      currency: '0x20c0000000000000000000000000000000000001', // pathUSD on Moderato
+      ...(process.env.TEMPO_NETWORK === 'testnet'
+        ? { currency: '0x20c0000000000000000000000000000000000001', testnet: true } // pathUSD on Moderato
+        : { currency: '0x20C000000000000000000000b9537d11c60E8b50' }), // USDC.e on Tempo mainnet
       recipient: process.env.RECIPIENT as `0x${string}`,
-      testnet: true,
     }),
   ],
   secretKey: process.env.MPP_SECRET_KEY!,

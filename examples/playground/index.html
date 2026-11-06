@@ -60,7 +60,8 @@
   .logo b { background: var(--taxi); padding: 2px 7px; border-radius: 8px; margin-left: 1px; }
   .chip { font: 600 12px/1 var(--mono); padding: 7px 12px; border-radius: 999px; border: 1.5px dashed currentColor; }
   .chip.demo { color: var(--mint); background: var(--mint-soft); }
-  .chip.moderato { color: var(--taxi-deep); background: var(--taxi-soft); }
+  .chip.testnet { color: var(--taxi-deep); background: var(--taxi-soft); }
+  .chip.mainnet { color: var(--coral); background: var(--coral-soft); }
 
   /* hero */
   .hero { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 28px; align-items: center; padding: 26px 0 18px; }
@@ -521,9 +522,10 @@ function bomb() {
 const $ = (id) => document.getElementById(id)
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c])
 const json = (v) => esc(JSON.stringify(v, null, 2))
-const moderato = MODE === 'moderato'
+const moderato = MODE !== 'demo' // real payments (mainnet or testnet): paid with the mppx CLI
+const netFlag = MODE === 'testnet' ? ' --network testnet' : ''
 
-$('mode').textContent = moderato ? '● Moderato testnet' : '● Demo payments · no money moves'
+$('mode').textContent = MODE === 'mainnet' ? '● Tempo mainnet · real payments' : MODE === 'testnet' ? '● Moderato testnet' : '● Demo payments · no money moves'
 $('mode').className = `chip ${MODE}`
 $('sdl').textContent = SCHEMA
 
@@ -660,7 +662,7 @@ function render(result) {
       <tfoot><tr><td>Total</td><td></td><td></td><td class="r">${esc(price.amount)}</td></tr></tfoot></table>
       <dl class="kv"><dt>challenge</dt><dd>${esc(first.challenge?.id?.slice(0, 22))}…</dd><dt>scope</dt><dd><span class="scope">${esc(first.challenge?.scope)}</span></dd><dt>expires</dt><dd>${esc(first.challenge?.expires)}</dd></dl>
       <div class="why">${dodgeNote ? `<b>Dodge failed.</b> ${esc(dodgeNote)}` : "The scope ties this Challenge to this exact query and its variables. A ticket bought for this ride can't be used on any other."}</div>
-      ${moderato ? `<p class="note">Pay on Moderato with the mppx CLI:</p><pre>npx mppx ${esc(location.origin)}/graphql -X POST -H 'content-type: application/json' \\\n  -d '${esc(JSON.stringify({ query: $('query').value }))}'</pre>` : ''}
+      ${moderato ? `<p class="note">Pay with the mppx CLI:</p><pre>npx mppx ${esc(location.origin)}/graphql${netFlag} -X POST -H 'content-type: application/json' \\\n  -d '${esc(JSON.stringify({ query: $('query').value }))}'</pre>` : ''}
       <details><summary>WWW-Authenticate</summary><pre>${esc(first.headers['www-authenticate'])}</pre></details>
     </div>`)
   } else if (first.status >= 400) {

@@ -11,8 +11,10 @@ import { useFareql } from '../../src/yoga.js'
 export type PlaygroundConfig = {
   /** The page (index.html). */
   page: string
-  /** Moderato mode: real Tempo testnet Challenges paid to this address. */
+  /** Real payments to this address (with `secretKey`). Without both, the playground uses a demo method. */
   recipient?: string
+  /** Tempo network for real payments. Default: mainnet (USDC.e). */
+  network?: 'mainnet' | 'testnet'
   secretKey?: string
   /** HMAC secret for the demo method's Challenges. */
   demoSecret?: string
@@ -90,6 +92,10 @@ const demoCharge = Method.from({
   },
 })
 
+const TEMPO = {
+  mainnet: { currency: '0x20C000000000000000000000b9537d11c60E8b50', testnet: false }, // USDC.e on Tempo mainnet
+  testnet: { currency: '0x20c0000000000000000000000000000000000001', testnet: true }, // pathUSD on Moderato
+} as const
 const fromBase64Url = (s: string) => {
   const b = s.replace(/-/g, '+').replace(/_/g, '/')
   return decodeURIComponent(escape(atob(b + '='.repeat((4 - (b.length % 4)) % 4))))
@@ -110,15 +116,13 @@ const json = (status: number, value: unknown) =>
   new Response(JSON.stringify(value), { status, headers: { 'content-type': 'application/json' } })
 
 export function createPlayground(config: PlaygroundConfig): (request: Request) => Promise<Response> {
-  const moderato = Boolean(config.recipient && config.secretKey)
-  const mppx = moderato
+  const real = Boolean(config.recipient && config.secretKey)
+  const network = config.network ?? 'mainnet'
+  const mode = real ? network : 'demo'
+  const mppx = real
     ? Mppx.create({
         methods: [
-          tempo.charge({
-            currency: '0x20c0000000000000000000000000000000000001', // pathUSD on Moderato
-            recipient: config.recipient as `0x${string}`,
-            testnet: true,
-          }),
+          tempo.charge({ ...TEMPO[network], recipient: config.recipient as `0x${string}` }),
         ],
         secretKey: config.secretKey!,
       })
@@ -183,7 +187,7 @@ export function createPlayground(config: PlaygroundConfig): (request: Request) =
       } catch {}
     }
     steps.push({ kind: 'request', label: 'Request without payment', ...firstSnap, challenge })
-    if (first.status !== 402 || !pay || moderato) return { mode: moderato ? 'moderato' : 'demo', steps }
+    if (first.status !== 402 || !pay || real) return { mode, steps }
 
     const sent: string[] = []
     const paid = await demoClient(sent).fetch(endpoint, init())
@@ -198,7 +202,7 @@ export function createPlayground(config: PlaygroundConfig): (request: Request) =
   }
 
   const page = config.page
-    .replace('__MODE__', moderato ? 'moderato' : 'demo')
+    .replace('__MODE__', mode)
     .replace('__SCHEMA__', JSON.stringify(typeDefs.replace(fareDirectiveTypeDefs, '').trim()))
 
   return async (request) => {

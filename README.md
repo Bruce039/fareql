@@ -179,13 +179,15 @@ Content-Type: application/json; charset=utf-8
 }
 ```
 
-Clients need nothing from FareQL, only an MPP client. With the mppx CLI and a Tempo testnet wallet:
+Clients need nothing from FareQL, only an MPP client. With the mppx CLI, an account and a little USDC.e on Tempo:
 
 ```bash
-npx mppx account create && npx mppx account fund
+npx mppx account create        # then send the account a little USDC.e
 npx mppx https://api.example.com/graphql -X POST -H 'content-type: application/json' \
   -d '{"query":"{ search(query: \"mpp\", first: 2) { snippet } }"}'
 ```
+
+For an API on the Moderato testnet, fund the account with `npx mppx account fund` and add `--network testnet`.
 
 In code, `mppx/client` wraps `fetch`, so 402s are paid and retried automatically. The paid response carries a `Payment-Receipt` and `Cache-Control: private`, so shared caches never store paid content. Set `exposePrice: false` to keep prices out of error bodies.
 
@@ -223,8 +225,8 @@ In code, `mppx/client` wraps `fetch`, so 402s are paid and retried automatically
 
 ## Examples
 
-- [`examples/playground`](https://github.com/Bruce039/fareql/tree/main/examples/playground): the [live demo](https://fareql.pages.dev). Run it locally with `npx tsx examples/playground/server.ts`; set `RECIPIENT` and `MPP_SECRET_KEY` for real Moderato testnet Challenges.
-- [`examples/yoga-tempo`](https://github.com/Bruce039/fareql/blob/main/examples/yoga-tempo/server.ts): a minimal GraphQL Yoga server on Moderato.
+- [`examples/playground`](https://github.com/Bruce039/fareql/tree/main/examples/playground): the [live demo](https://fareql.pages.dev). Run it locally with `npx tsx examples/playground/server.ts`. Set `RECIPIENT` and `MPP_SECRET_KEY` for real payments on Tempo mainnet, plus `TEMPO_NETWORK=testnet` for the Moderato testnet.
+- [`examples/yoga-tempo`](https://github.com/Bruce039/fareql/blob/main/examples/yoga-tempo/server.ts): a minimal GraphQL Yoga server on Tempo (mainnet by default, `TEMPO_NETWORK=testnet` for Moderato).
 - [`examples/apollo-tempo`](https://github.com/Bruce039/fareql/blob/main/examples/apollo-tempo/server.ts): Apollo Server with a priced Relay-style connection.
 
 ## Development
