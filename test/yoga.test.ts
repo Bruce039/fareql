@@ -112,6 +112,18 @@ describe('useFareql (GraphQL Yoga plugin)', () => {
     expect(log).toHaveLength(0)
   })
 
+  it('charges once and keeps the receipt when getRequest returns its own Request', async () => {
+    const log: ChargeLog = []
+    const yoga = server(log, { getRequest: (ctx: any) => new Request('https://api.example.com/graphql', { method: 'POST', headers: ctx.request.headers }) })
+    const q = '{ expensive { pages } }'
+    const c = challengeOf(await yoga.fetch(gql(q)))
+    const before = log.length
+    const paid = await yoga.fetch(gql(q, undefined, payFor(c)))
+    expect(paid.status).toBe(200)
+    expect(paid.headers.get('payment-receipt')).toBe('ok;amount=0.02')
+    expect(log.length - before).toBe(1)
+  })
+
   it('allows free operations in batches but not priced ones', async () => {
     const log: ChargeLog = []
     const yoga = server(log)

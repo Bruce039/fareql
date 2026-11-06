@@ -47,6 +47,8 @@ const PARAM_KEYS = ['query', 'operationName', 'variables', 'extensions', 'docume
 const bad = (message: string, status = 400, code = 'BAD_REQUEST') => new RequestError(message, status, code)
 
 /** Content-type match as GraphQL Yoga does it: first entry of a list, case-sensitive, parameters allowed. */
+// Deliberately exact and case-sensitive, like GraphQL Yoga: a type the gate accepted but the
+// handler refused would mean a client paid for nothing.
 function contentTypeIs(request: Request, expected: string): boolean {
   const t = (request.headers.get('content-type') ?? '').split(',')[0]?.trim() ?? ''
   return t === expected || t.startsWith(`${expected};`)
@@ -343,6 +345,15 @@ export function createPaymentGate(options: GateOptions): (request: Request) => P
   }
 }
 
+/** Paid content belongs to the payer: never let a shared cache or CDN store it. */
+function privateResponse(response: Response): Response {
+  const cc = response.headers.get('cache-control') ?? ''
+  if (/\b(private|no-store)\b/i.test(cc)) return response
+  const headers = new Headers(response.headers)
+  headers.set('cache-control', 'private, no-store')
+  return new Response(response.body, { status: response.status, statusText: response.statusText, headers })
+}
+
 /**
  * Wraps any Fetch-API GraphQL handler (graphql-http, Apollo's fetch integrations, a Hono or
  * Next.js route). Free operations pass through; priced ones get a 402 Challenge, or run and
@@ -357,7 +368,7 @@ export function withPayment(
   return async (request) => {
     const r = await gate(request)
     if (r.status === 'free') return handler(request)
-    if (r.status === 'paid') return r.withReceipt(await handler(request))
+    if (r.status === 'paid') return privateResponse(r.withReceipt(await handler(request)))
     return r.response
   }
 }

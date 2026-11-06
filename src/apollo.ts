@@ -14,12 +14,17 @@ export type FareqlApolloOptions = FareOptions & {
 function toFetchRequest(http: HTTPGraphQLRequest, url: FareqlApolloOptions['url']): Request {
   const headers = new Headers()
   for (const [key, value] of http.headers) headers.set(key, value)
-  const href =
-    typeof url === 'function'
-      ? url(http)
-      : url
-        ? `${url}${http.search}`
-        : `http://${http.headers.get('host') ?? 'localhost'}/graphql${http.search}`
+  let href: string
+  if (typeof url === 'function') href = url(http)
+  else if (url) {
+    try {
+      const u = new URL(url)
+      for (const [k, v] of new URLSearchParams(http.search)) u.searchParams.append(k, v)
+      href = u.toString()
+    } catch {
+      href = `http://localhost/graphql${http.search}`
+    }
+  } else href = `http://${http.headers.get('host') ?? 'localhost'}/graphql${http.search}`
   try {
     return new Request(href, { method: http.method, headers })
   } catch {

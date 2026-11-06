@@ -110,7 +110,11 @@ export function useFareql(options: UseFareqlOptions): Plugin {
   const gate = async (args: ExecArgs): Promise<{ stop?: ExecutionResult; paid: boolean }> => {
     const schema = options.schema ?? args.schema
     const input: OperationInput = { document: args.document, operationName: args.operationName, variables: args.variableValues }
-    const request = options.getRequest?.(args.contextValue) ?? args.contextValue.request
+    // Bookkeeping (receipts, batches, the backstop) is keyed by Yoga's own request object;
+    // the payment itself uses getRequest's request when one is supplied.
+    const httpRequest = args.contextValue.request
+    const payRequest = options.getRequest?.(args.contextValue) ?? httpRequest
+    const request = httpRequest ?? payRequest
     let price: ReturnType<typeof priceOperation>
     try {
       price = priceOperation({ schema, ...input }, options.pricing)
@@ -119,7 +123,7 @@ export function useFareql(options: UseFareqlOptions): Plugin {
       throw e
     }
     const units = price.units
-    if (!request) {
+    if (!request || !payRequest) {
       // No HTTP request to carry a Credential (e.g. graphql-ws): fail closed for priced operations.
       if (units === 0n) return { paid: false }
       return {
@@ -135,7 +139,7 @@ export function useFareql(options: UseFareqlOptions): Plugin {
       // One request carries one Credential, so priced operations cannot share a batch.
       return { stop: failure('Priced operations cannot be batched; send them one per request', { code: 'BATCHING_NOT_SUPPORTED' }, 400), paid: false }
     }
-    const outcome = await chargeOperations(forPayment(request), schema, [input], options, [price])
+    const outcome = await chargeOperations(forPayment(payRequest), schema, [input], options, [price])
     const stop = settle(request, outcome)
     if (!stop) allowed.set(request, (allowed.get(request) ?? 0) + 1)
     return { stop, paid: outcome.status === 'paid' }

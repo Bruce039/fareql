@@ -13,6 +13,10 @@ import { createServerAdapter } from '@whatwg-node/server'
 import { createPlayground } from './app.js'
 
 const PORT = Number(process.env.PORT ?? 4000)
+if (process.env.RECIPIENT && !/^0x[0-9a-fA-F]{40}$/.test(process.env.RECIPIENT)) {
+  console.error('RECIPIENT must be a 0x address (40 hex characters).')
+  process.exit(1)
+}
 const handle = createPlayground({
   page: readFileSync(new URL('./index.html', import.meta.url), 'utf8'),
   recipient: process.env.RECIPIENT,

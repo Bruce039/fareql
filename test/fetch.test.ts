@@ -216,6 +216,14 @@ describe('withPayment (any Fetch handler)', () => {
     expect((await paid.json()).data.weather.temperature).toBe(21.5)
   })
 
+  it('marks paid responses private even if the handler says public', async () => {
+    const h = withPayment(() => new Response(JSON.stringify({ data: { ok: true } }), { headers: { 'content-type': 'application/json', 'cache-control': 'public, max-age=60' } }), { schema, charge: fakeCharge() })
+    const q = '{ weather(city: "Denver") { temperature } }'
+    const paid = await h(gql(q, undefined, payFor(challengeOf(await h(gql(q))))))
+    expect(paid.status).toBe(200)
+    expect(paid.headers.get('cache-control')).toBe('private, no-store')
+  })
+
   it('passes free operations straight through', async () => {
     const r = await handler(gql('{ hello }'))
     expect((await r.json()).data.hello).toBe('hi')

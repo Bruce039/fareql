@@ -74,6 +74,23 @@ describe('fareqlApolloPlugin (Apollo Server)', () => {
     expect(text).not.toContain('0.01')
   })
 
+  it('joins a configured url that already has a query string', async () => {
+    const seen: string[] = []
+    const charge: any = (o: any) => async (req: Request) => {
+      seen.push(req.url)
+      return fakeCharge()(o)(req)
+    }
+    const server = new ApolloServer({ typeDefs, resolvers, plugins: [fareqlApolloPlugin({ charge, url: 'https://api.example.com/graphql?tenant=a' })] })
+    await server.start()
+    await server.executeHTTPGraphQLRequest({
+      httpGraphQLRequest: { method: 'GET', headers: new HeaderMap([['apollo-require-preflight', 'true']]), search: `?query=${encodeURIComponent('{ expensive { pages } }')}`, body: undefined },
+      context: async () => ({}),
+    })
+    const u = new URL(seen[0]!)
+    expect(u.searchParams.get('tenant')).toBe('a')
+    expect(u.searchParams.get('query')).toBe('{ expensive { pages } }')
+  })
+
   it('prices GET queries', async () => {
     const { run } = await setup()
     expect((await run('{ expensive { pages } }', {}, 'GET')).status).toBe(402)

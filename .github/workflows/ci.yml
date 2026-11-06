@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node: [20, 22, 24]
+        node: [22, 24]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -25,6 +25,23 @@ jobs:
       - run: node scripts/smoke.mjs
       - run: npm pack --dry-run
 
+  # Node 20 users need GraphQL Yoga 5 (Yoga 6 requires Node 22) and a test runner that supports
+  # Node 20 (vitest 3), so this job runs the whole suite on that combination.
+  node-20:
+    name: node 20 · Yoga 5 + Apollo 5
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm install --no-save --force vitest@^3 graphql-yoga@^5 @graphql-yoga/plugin-apq@^3 @graphql-yoga/plugin-response-cache@^3 @graphql-yoga/plugin-persisted-operations@^3
+      - run: npx vitest run
+      - run: npm run build
+      - run: node scripts/smoke.mjs
+
   graphql-17:
     name: node 22 · graphql 17
     runs-on: ubuntu-latest
@@ -35,8 +52,23 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      # Apollo Server 5 supports graphql 16 only, so its tests are skipped here.
+      # Apollo Server supports graphql 16 only, so its tests are skipped here.
       - run: npm install --no-save --force graphql@^17.1.0
       - run: npx vitest run --exclude test/apollo.test.ts --exclude test/attacks-plugins.test.ts
+      - run: npm run build
+      - run: node scripts/smoke.mjs
+
+  older-servers:
+    name: node 22 · Yoga 5 + Apollo 4
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm install --no-save --force graphql-yoga@^5 @graphql-yoga/plugin-apq@^3 @graphql-yoga/plugin-response-cache@^3 @graphql-yoga/plugin-persisted-operations@^3 @apollo/server@^4 @apollo/server-plugin-response-cache@^4
+      - run: npm test
       - run: npm run build
       - run: node scripts/smoke.mjs

@@ -117,6 +117,7 @@ export const POST = withPayment((req) => handler(req), { schema, charge: (o) => 
 
 `withPayment` reads the request itself, so it refuses anything the wrapped handler could read differently:
 
+- Content types are matched exactly and case-sensitively, as GraphQL Yoga does, so the gate never accepts a body the handler would refuse.
 - It accepts GET and `application/json` POST by default. Enable `application/graphql`, `application/graphql+json`, form-urlencoded or multipart uploads with `encodings: [...]`, but only if your handler accepts them too.
 - It refuses the following with a 4xx before anything is charged:
   - URL fragments, duplicate or unknown parameters, and GraphQL parameters in a POST URL;

@@ -37,10 +37,17 @@ const resolvers = {
   },
 }
 
+const testnet = process.env.TEMPO_NETWORK === 'testnet'
+if (!/^0x[0-9a-fA-F]{40}$/.test(process.env.RECIPIENT ?? '') || !process.env.MPP_SECRET_KEY) {
+  console.error('Set RECIPIENT (the 0x address that receives payments) and MPP_SECRET_KEY (e.g. `openssl rand -hex 32`).')
+  process.exit(1)
+}
+console.log(`Charging on ${testnet ? 'the Moderato testnet (pathUSD)' : 'Tempo MAINNET (USDC.e, real money)'} to ${process.env.RECIPIENT}`)
+
 const mppx = Mppx.create({
   methods: [
     tempo.charge({
-      ...(process.env.TEMPO_NETWORK === 'testnet'
+      ...(testnet
         ? { currency: '0x20c0000000000000000000000000000000000001', testnet: true } // pathUSD on Moderato
         : { currency: '0x20C000000000000000000000b9537d11c60E8b50' }), // USDC.e on Tempo mainnet
       recipient: process.env.RECIPIENT as `0x${string}`,
