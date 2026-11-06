@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>FareQL Playground</title>
+<style>
+  :root {
+    --bg: #f6f5f1; --panel: #ffffff; --ink: #1d1c1a; --muted: #6b6860; --line: #e4e1d8;
+    --accent: #c2410c; --accent-soft: #fff1e8; --ok: #15803d; --ok-soft: #e8f6ec;
+    --warn: #b45309; --warn-soft: #fdf3e2; --bad: #b91c1c; --bad-soft: #fdecec;
+    --code: #f1efe8; --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #141413; --panel: #1d1c1a; --ink: #ecebe6; --muted: #a09d94; --line: #33312d;
+      --accent: #fb923c; --accent-soft: #3a2416; --ok: #4ade80; --ok-soft: #15291c;
+      --warn: #fbbf24; --warn-soft: #33270f; --bad: #f87171; --bad-soft: #3a1717; --code: #262522;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header { padding: 28px 24px 8px; max-width: 1240px; margin: 0 auto; }
+  h1 { margin: 0; font-size: 26px; letter-spacing: -0.01em; }
+  h1 span { color: var(--accent); }
+  .sub { color: var(--muted); margin: 6px 0 0; max-width: 760px; }
+  .badge { display: inline-block; margin-left: 10px; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; vertical-align: middle; }
+  .badge.demo { background: var(--ok-soft); color: var(--ok); }
+  .badge.moderato { background: var(--warn-soft); color: var(--warn); }
+  main { max-width: 1240px; margin: 0 auto; padding: 16px 24px 48px; display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 20px; }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; padding: 16px; } header { padding: 20px 16px 4px; } }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px; }
+  .panel h2 { margin: 0 0 10px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+  .presets { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .presets button { border: 1px solid var(--line); background: var(--bg); color: var(--ink); border-radius: 999px; padding: 5px 12px; font: inherit; font-size: 13px; cursor: pointer; }
+  .presets button:hover { border-color: var(--accent); }
+  .presets button.attack { color: var(--bad); }
+  label { display: block; font-size: 12px; color: var(--muted); margin: 10px 0 4px; }
+  textarea { width: 100%; border: 1px solid var(--line); border-radius: 10px; background: var(--code); color: var(--ink); font: 13px/1.5 var(--mono); padding: 10px 12px; resize: vertical; }
+  textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  .actions { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+  .actions button { font: inherit; font-weight: 600; border-radius: 10px; padding: 9px 16px; cursor: pointer; border: 1px solid var(--accent); }
+  .primary { background: var(--accent); color: #fff; }
+  .secondary { background: transparent; color: var(--accent); }
+  .schema { margin-top: 18px; }
+  pre { margin: 0; background: var(--code); border-radius: 10px; padding: 10px 12px; overflow-x: auto; font: 12.5px/1.55 var(--mono); }
+  .sdl .price { color: var(--accent); font-weight: 600; }
+  .timeline { display: grid; gap: 14px; }
+  .empty { color: var(--muted); padding: 40px 10px; text-align: center; }
+  .step { border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; background: var(--panel); }
+  .step-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .num { width: 24px; height: 24px; border-radius: 50%; background: var(--ink); color: var(--panel); display: grid; place-items: center; font-size: 12px; font-weight: 700; flex: none; }
+  .step-title { font-weight: 600; }
+  .pill { padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; font-family: var(--mono); }
+  .s2 { background: var(--ok-soft); color: var(--ok); } .s4p { background: var(--accent-soft); color: var(--accent); } .s4 { background: var(--bad-soft); color: var(--bad); }
+  .price-big { font-size: 30px; font-weight: 700; margin: 10px 0 2px; letter-spacing: -0.02em; }
+  .price-big small { font-size: 14px; color: var(--muted); font-weight: 500; }
+  table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 13px; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 500; font-size: 12px; }
+  td.num-c, th.num-c { text-align: right; font-family: var(--mono); }
+  td code { font-family: var(--mono); font-size: 12.5px; }
+  .kv { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; font-size: 13px; margin: 8px 0; }
+  .kv dt { color: var(--muted); } .kv dd { margin: 0; font-family: var(--mono); word-break: break-all; }
+  details { margin-top: 8px; } summary { cursor: pointer; color: var(--muted); font-size: 13px; }
+  details pre { margin-top: 6px; max-height: 260px; }
+  .note { font-size: 13px; color: var(--muted); margin: 8px 0 0; }
+  .err { color: var(--bad); font-weight: 600; margin: 8px 0 0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Fare<span>QL</span> Playground <span id="mode" class="badge"></span></h1>
+  <p class="sub">Every GraphQL operation is priced by what it selects. Ask for a quote to see the real <code>402 Payment Required</code> with its MPP Challenge and price breakdown, or pay and run to watch the whole loop: Challenge → Credential → data with a <code>Payment-Receipt</code>.</p>
+</header>
+<main>
+  <section class="panel">
+    <h2>Operation</h2>
+    <div class="presets" id="presets"></div>
+    <label for="query">Query</label>
+    <textarea id="query" rows="9" spellcheck="false"></textarea>
+    <label for="variables">Variables (JSON)</label>
+    <textarea id="variables" rows="2" spellcheck="false">{}</textarea>
+    <div class="actions">
+      <button class="secondary" id="quote">Get quote (send unpaid)</button>
+      <button class="primary" id="pay">Pay &amp; run</button>
+    </div>
+    <div class="schema">
+      <h2>Schema and prices</h2>
+      <pre class="sdl" id="sdl"></pre>
+    </div>
+  </section>
+  <section class="panel">
+    <h2>What happened</h2>
+    <div class="timeline" id="timeline"><div class="empty">Pick an example or write a query, then press a button.</div></div>
+  </section>
+</main>
+<script>
+const MODE = '__MODE__'
+const SCHEMA = __SCHEMA__
+const presets = [
+  ['Free field', '{ hello }'],
+  ['Weather · 0.001', '{ weather(city: "Denver") { temperature } }'],
+  ['Search, 2 hits', '{ search(query: "tempo", first: 2) { title snippet } }'],
+  ['Relay connection', '{ users(first: 20) { edges { node { name email } } } }'],
+  ['Nested list', '{ weather(city: "Denver") { hourly(limit: 6) { hour detail } } }'],
+  ['Interface: worst case', '{ node(id: "a1") { id ... on Article { title } } }'],
+  ['Same field twice', '{ weather(city: "Denver") { temperature } ...W }\nfragment W on Query { weather(city: "Denver") { temperature } }'],
+  ['Attack: first: -5', '{ search(query: "x", first: -5) { snippet } }', true],
+  ['Attack: fragment bomb', bomb(), true],
+]
+function bomb() {
+  const f = ['fragment F0 on Query { weather(city: "x") { temperature } }']
+  for (let i = 1; i <= 25; i++) f.push(`fragment F${i} on Query { ...F${i - 1} ...F${i - 1} }`)
+  return `{ ...F25 }\n${f.join('\n')}`
+}
+const $ = (id) => document.getElementById(id)
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c])
+const json = (v) => esc(JSON.stringify(v, null, 2))
+
+$('mode').textContent = MODE === 'moderato' ? 'Moderato testnet' : 'Demo payments · no money'
+$('mode').className = `badge ${MODE}`
+$('sdl').innerHTML = esc(SCHEMA).replace(/(@price\(amount: &quot;[^&]+&quot;\))/g, '<span class="price">$1</span>')
+for (const [name, q, attack] of presets) {
+  const b = document.createElement('button')
+  b.textContent = name
+  if (attack) b.className = 'attack'
+  b.onclick = () => { $('query').value = q; $('variables').value = '{}' }
+  $('presets').append(b)
+}
+$('query').value = presets[2][1]
+
+const statusPill = (s) => `<span class="pill ${s === 402 ? 's4p' : s < 300 ? 's2' : 's4'}">${s} ${s === 402 ? 'Payment Required' : s < 300 ? 'OK' : 'Refused'}</span>`
+
+function priceBlock(price) {
+  if (!price) return ''
+  const rows = price.breakdown.map((b) => `<tr><td><code>${esc(b.path)}</code></td><td class="num-c">${esc(b.unitAmount)}</td><td class="num-c">× ${esc(b.count)}</td><td class="num-c">${esc(b.amount)}</td></tr>`).join('')
+  return `<div class="price-big">${esc(price.amount)} <small>tokens · ${price.decimals} decimals</small></div>
+    <table><thead><tr><th>Field</th><th class="num-c">Unit</th><th class="num-c">Count</th><th class="num-c">Amount</th></tr></thead><tbody>${rows}</tbody></table>`
+}
+
+function challengeBlock(c, raw) {
+  if (!c) return ''
+  const scope = c.scope
+  return `<dl class="kv">
+      <dt>method / intent</dt><dd>${esc(c.method)} / ${esc(c.intent)}</dd>
+      <dt>realm</dt><dd>${esc(c.realm)}</dd>
+      <dt>amount</dt><dd>${esc(c.request && c.request.amount)}</dd>
+      <dt>scope</dt><dd>${esc(scope || '')}</dd>
+      <dt>expires</dt><dd>${esc(c.expires || '')}</dd>
+    </dl>
+    <p class="note">The scope binds this Challenge to this exact operation and variables. A Credential for it can't pay for any other query.</p>
+    <details><summary>WWW-Authenticate header</summary><pre>${esc(raw || '')}</pre></details>`
+}
+
+function render(result) {
+  const t = $('timeline')
+  if (result.error) { t.innerHTML = `<p class="err">${esc(result.error)}</p>`; return }
+  t.innerHTML = result.steps.map((s, i) => {
+    const head = `<div class="step-head"><span class="num">${i + 1}</span><span class="step-title">${esc(s.label)}</span>${s.status ? statusPill(s.status) : ''}</div>`
+    if (s.kind === 'credential') {
+      return `<div class="step">${head}<p class="note">The client signs the Challenge (here with the demo method; on Tempo it is a stablecoin transfer) and resends the same request with:</p><pre>Authorization: ${esc((s.credential || '').slice(0, 140))}…</pre></div>`
+    }
+    const errors = s.body && s.body.errors
+    const price = errors && errors[0] && errors[0].extensions && errors[0].extensions.price
+    let extra = ''
+    if (s.status === 402) {
+      extra = priceBlock(price) + challengeBlock(s.challenge, s.headers['www-authenticate'])
+      if (MODERATO()) extra += `<p class="note">Pay this on Moderato with the mppx CLI:</p><pre>npx mppx ${location.origin}/graphql -X POST -H 'content-type: application/json' \\\n  -d '${esc(JSON.stringify({ query: $('query').value }))}'</pre>`
+    } else if (s.status >= 400) {
+      extra = `<p class="err">${esc(errors ? errors.map((e) => `${e.extensions && e.extensions.code ? `[${e.extensions.code}] ` : ''}${e.message}`).join('\n') : 'Refused')}</p><p class="note">Refused before any Challenge: nothing was charged and nothing ran.</p>`
+    } else {
+      if (s.receipt) {
+        extra += `<dl class="kv"><dt>receipt</dt><dd>${esc(s.receipt.method)} · ${esc(s.receipt.status)} · ${esc(s.receipt.reference)}</dd><dt>cache-control</dt><dd>${esc(s.headers['cache-control'] || '')}</dd></dl>`
+      } else if (s.kind === 'request') {
+        extra += '<p class="note">Free operation: it ran without any payment.</p>'
+      }
+      extra += `<pre>${json(s.body && s.body.data !== undefined ? { data: s.body.data } : s.body)}</pre>`
+    }
+    return `<div class="step">${head}${extra}<details><summary>Raw response</summary><pre>${json({ status: s.status, headers: s.headers, body: s.body })}</pre></details></div>`
+  }).join('')
+}
+const MODERATO = () => MODE === 'moderato'
+
+async function run(pay) {
+  let variables = {}
+  try { variables = JSON.parse($('variables').value || '{}') } catch { render({ error: 'Variables must be JSON' }); return }
+  $('timeline').innerHTML = '<div class="empty">Running…</div>'
+  const r = await fetch('/demo/run', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ query: $('query').value, variables, pay }) })
+  render(await r.json())
+}
+$('quote').onclick = () => run(false)
+$('pay').onclick = () => run(true)
+if (MODERATO()) $('pay').textContent = 'Pay with npx mppx (see step 1)'
+</script>
+</body>
+</html>

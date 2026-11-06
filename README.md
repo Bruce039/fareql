@@ -166,6 +166,7 @@ Any MPP client (`mppx`'s fetch wrapper, `npx mppx`, agents) pays and retries. Th
 
 - [`examples/yoga-tempo`](examples/yoga-tempo/server.ts): GraphQL Yoga on Tempo's Moderato testnet
 - [`examples/apollo-tempo`](examples/apollo-tempo/server.ts): Apollo Server with a priced Relay-style connection
+- [`examples/playground`](examples/playground/server.ts): a local page that walks through quote → Challenge → Credential → Receipt. It uses a settlement-free demo method by default (`npx tsx examples/playground/server.ts`, then open http://localhost:4000), and real Moderato Challenges when `RECIPIENT` and `MPP_SECRET_KEY` are set
 
 ```bash
 MPP_SECRET_KEY=$(openssl rand -hex 32) RECIPIENT=0x… npx tsx examples/yoga-tempo/server.ts
