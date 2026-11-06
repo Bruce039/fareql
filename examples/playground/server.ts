@@ -209,6 +209,27 @@ const server = createServer(async (req, res) => {
     }
     return
   }
+  if (url.pathname === '/demo/replay' && req.method === 'POST') {
+    // Re-sends a Credential issued for one operation with another operation, as an attacker would.
+    const chunks: Buffer[] = []
+    for await (const c of req) chunks.push(c as Buffer)
+    try {
+      const { query, variables, credential } = JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}')
+      const r = await yoga.fetch(
+        new Request(`http://localhost:${PORT}/graphql`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', accept: 'application/json', authorization: String(credential ?? '') },
+          body: JSON.stringify({ query, variables: variables ?? {} }),
+        }),
+      )
+      res.writeHead(200, { 'content-type': 'application/json' })
+      res.end(JSON.stringify(await snapshot(r)))
+    } catch (e) {
+      res.writeHead(400, { 'content-type': 'application/json' })
+      res.end(JSON.stringify({ error: (e as Error).message }))
+    }
+    return
+  }
   return yoga(req, res)
 })
 

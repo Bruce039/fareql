@@ -165,6 +165,38 @@
     .fare { font-size: 34px; }
   }
   html, body { overflow-x: clip; }
+  /* sliders */
+  .sliders { display: grid; gap: 10px; margin-top: 10px; }
+  .slider { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; background: var(--sky-soft); border-radius: 12px; padding: 10px 14px; }
+  .slider b { font: 700 13px var(--mono); }
+  .slider output { font: 700 15px var(--mono); min-width: 3ch; text-align: right; }
+  .slider input[type=range] { width: 100%; accent-color: var(--sky); }
+  .slider .cap { grid-column: 1 / -1; font: 600 12px var(--mono); color: var(--taxi-deep); display: none; }
+  .slider.capped .cap { display: block; }
+  .lamp.live i { background: var(--sky); box-shadow: 0 0 0 4px var(--sky-soft); animation: blink 1s ease-in-out infinite; }
+  @keyframes blink { 50% { opacity: .35; } }
+  /* replay */
+  .replay { margin-top: 16px; padding-top: 14px; border-top: 1.5px dashed var(--line); }
+  .replay h4 { margin: 0 0 4px; font: 700 15px/1.3 var(--display); }
+  .replay .btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .mini { font: 600 13px/1 var(--display); padding: 9px 12px; border-radius: 10px; border: 1.5px solid var(--ink); background: var(--card); cursor: pointer; box-shadow: 0 3px 0 var(--ink); }
+  .mini:active { transform: translateY(2px); box-shadow: none; }
+  .verdict { margin-top: 12px; padding: 12px 14px; border-radius: 12px; font-size: 13.5px; position: relative; animation: rise .35s both; }
+  .verdict.no { background: var(--coral-soft); } .verdict.yes { background: var(--mint-soft); }
+  .verdict .v { font: 800 13px/1 var(--display); letter-spacing: .1em; }
+  .verdict.no .v { color: var(--coral); } .verdict.yes .v { color: var(--mint); }
+  /* trip log */
+  .trips { display: grid; gap: 6px; }
+  .trip { display: grid; grid-template-columns: auto 1fr auto auto; gap: 10px; align-items: center; font-size: 13px; padding: 8px 10px; border-radius: 10px; background: var(--paper); }
+  .trip time { font: 600 11px var(--mono); color: var(--muted); }
+  .trip code { font: 600 12.5px var(--mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .trip .k { font: 700 10px/1 var(--mono); padding: 4px 6px; border-radius: 5px; text-transform: uppercase; letter-spacing: .06em; }
+  .k.paid { background: var(--mint-soft); color: var(--mint); } .k.quoted { background: var(--taxi-soft); color: var(--taxi-deep); }
+  .k.free { background: var(--sky-soft); color: var(--sky); } .k.blocked { background: var(--coral-soft); color: var(--coral); }
+  .trip .f { font: 700 12.5px var(--mono); }
+  .total { display: flex; justify-content: space-between; align-items: baseline; margin-top: 12px; padding-top: 10px; border-top: 1.5px solid var(--ink); font: 700 14px var(--display); }
+  .total span:last-child { font: 800 18px var(--mono); }
+  .linkbtn { background: none; border: 0; color: var(--muted); font: 600 12px var(--mono); cursor: pointer; text-decoration: underline; padding: 0; }
   .code-chip { font: 600 12px var(--mono); background: var(--card); color: var(--coral); padding: 2px 8px; border-radius: 6px; }
 </style>
 </head>
@@ -181,7 +213,7 @@
   <section class="hero">
     <div>
       <h1>Every query pays <em>its own fare.</em></h1>
-      <p>FareQL prices each GraphQL operation by what it selects and charges it over MPP (HTTP 402). Check the fare to get a real Challenge, then pay and ride to watch the whole trip: Challenge, Credential, data, Receipt.</p>
+      <p>FareQL prices each GraphQL operation by what it selects and charges it over MPP (HTTP 402). The meter quotes live while you type. Check the fare to get a real Challenge, then pay and ride to watch the whole trip: Challenge, Credential, data, Receipt.</p>
     </div>
     <div class="meter" aria-live="polite">
       <div class="meter-top"><span>TAXIMETER</span><span class="lamp" id="lamp"><i></i><span id="lampText">FOR HIRE</span></span></div>
@@ -212,6 +244,7 @@
         <textarea id="query" rows="8" spellcheck="false"></textarea>
         <label for="variables">VARIABLES (JSON)</label>
         <textarea id="variables" rows="2" spellcheck="false">{}</textarea>
+        <div class="sliders" id="sliders"></div>
         <div class="actions">
           <button class="btn quote" id="quote">Check the fare</button>
           <button class="btn pay" id="pay">Pay &amp; ride →</button>
@@ -222,6 +255,12 @@
         <div class="chart" id="chart"></div>
         <p class="note">Lists multiply: <code>search(first: 2)</code> pays the hit price twice, and each hit's snippet too. Interfaces charge their most expensive possible type.</p>
         <details><summary>Show the schema (SDL)</summary><pre id="sdl"></pre></details>
+      </section>
+      <section class="card">
+        <p class="eyebrow">Trip log</p>
+        <div class="trips" id="trips"></div>
+        <div class="total"><span>Paid in total</span><span id="totalPaid">0</span></div>
+        <p class="note">Kept in this browser only. <button class="linkbtn" id="clearTrips">Clear the log</button></p>
       </section>
     </div>
     <section class="card">
@@ -244,6 +283,7 @@ const rides = [
   ['Hourly forecast', '{ weather(city: "Denver") { hourly(limit: 6) { hour detail } } }'],
   ['Mystery node', '{ node(id: "a1") { id ... on Article { title } } }'],
   ['Same field twice', '{ weather(city: "Denver") { temperature } ...W }\nfragment W on Query { weather(city: "Denver") { temperature } }'],
+  ['Slide the page size', 'query Users($n: Int!) {\n  users(first: $n) { edges { node { name email } } }\n}', 'vars', { n: 20 }],
 ]
 const dodgers = [
   ['Negative page', '{ search(query: "x", first: -5) { snippet } }', 'A resolver doing items.slice(0, -5) would hand over almost everything for free.'],
@@ -285,7 +325,7 @@ $('sdl').textContent = SCHEMA
 })()
 
 function addTickets(el, list, cls) {
-  for (const [name, q, extra] of list) {
+  for (const [name, q, extra, vars] of list) {
     const b = document.createElement('button')
     b.className = `ticket ${cls || (extra === 'free' ? 'free' : '')}`
     b.innerHTML = esc(name)
@@ -293,8 +333,10 @@ function addTickets(el, list, cls) {
       document.querySelectorAll('.ticket').forEach((x) => x.classList.remove('active'))
       b.classList.add('active')
       $('query').value = q
-      $('variables').value = '{}'
+      $('variables').value = JSON.stringify(vars || {})
       dodgeNote = cls === 'dodge' ? extra : ''
+      renderSliders()
+      liveQuote()
     }
     el.append(b)
   }
@@ -361,8 +403,18 @@ function render(result) {
       ${dodgeNote ? `<div class="why">${esc(dodgeNote)}</div>` : ''}
     </div>`)
     route(['done', 'stopped', '', ''])
+    logTrip('blocked', 0)
+  } else if (errors && !first.body.data) {
+    setFare(0); lamp('', 'INVALID'); meterFoot(['not a valid query', 'nothing charged'])
+    cards.push(`<div class="slip refused"><span class="stamp">INVALID</span>
+      <div class="slip-head"><span class="status st-4xx">${first.status}</span><h3>No such route</h3></div>
+      <p class="err">${esc(errors.map((e) => e.message).join('\n'))}</p>
+      <div class="why">GraphQL rejected the document before any pricing. Nothing was charged.</div></div>`)
+    route(['done', 'stopped', '', ''])
+    logTrip('blocked', 0)
   } else {
     setFare(0); lamp('ok', 'FREE RIDE'); meterFoot(['no payment needed'])
+    logTrip('free', 0)
     cards.push(`<div class="slip receipt"><span class="stamp paid">FREE</span>
       <div class="slip-head"><span class="status st-200">200 OK</span><h3>Free ride</h3></div>
       ${dodgeNote ? `<div class="why">${esc(dodgeNote)}</div>` : ''}
@@ -370,7 +422,7 @@ function render(result) {
     route(['done', 'done', 'done', 'done'])
   }
 
-  if (first.status === 402 && !paid) route(['done', 'active', '', ''])
+  if (first.status === 402 && !paid) { route(['done', 'active', '', '']); logTrip('quoted', Number(price.amount)) }
   if (paid) {
     const cred = result.steps[1].credential || ''
     cards.push(`<div class="slip credential">
@@ -381,21 +433,122 @@ function render(result) {
     cards.push(`<div class="slip receipt"><span class="stamp paid">PAID</span>
       <div class="slip-head"><span class="status ${statusClass(paid.status)}">${paid.status} OK</span><h3>Enjoy the ride</h3></div>
       <dl class="kv"><dt>receipt</dt><dd>${esc(paid.receipt?.method)} · ${esc(paid.receipt?.status)} · ${esc(paid.receipt?.reference)}</dd><dt>time</dt><dd>${esc(paid.receipt?.timestamp)}</dd><dt>cache-control</dt><dd>${esc(paid.headers['cache-control'])}</dd></dl>
-      <pre>${json({ data: paid.body?.data })}</pre></div>`)
+      <pre>${json({ data: paid.body?.data })}</pre>
+      <div class="replay">
+        <h4>Try to reuse this ticket on another ride</h4>
+        <p class="note">An attacker who saw this Credential sends it with a different query. FareQL binds every Challenge to one operation, so mppx must refuse it.</p>
+        <div class="btns">
+          <button class="mini" data-replay="0">Same query, other variables</button>
+          <button class="mini" data-replay="1">A pricier ride</button>
+          <button class="mini" data-replay="2">A cheaper ride</button>
+        </div>
+        <div id="verdict"></div>
+      </div></div>`)
     route(['done', 'done', 'done', 'done'])
+    lastTicket = { credential: cred, query: $('query').value, variables: currentVariables() }
+    logTrip('paid', Number(price.amount))
   }
   j.innerHTML = cards.join('')
+  j.querySelectorAll('[data-replay]').forEach((b) => (b.onclick = () => replay(Number(b.dataset.replay))))
 }
+
+// ── reuse a paid Credential on other rides (scope binding demo)
+let lastTicket = null
+function otherRides(t) {
+  const swapped = t.query.replace(/"([^"]*)"/, (_, v) => `"${v}x"`)
+  const variant = Object.keys(t.variables).length
+    ? { query: t.query, variables: Object.fromEntries(Object.entries(t.variables).map(([k, v]) => [k, typeof v === 'number' ? v + 1 : `${v}x`])) }
+    : { query: swapped === t.query ? `{ a: ${t.query.replace(/^\s*\{/, '').replace(/\}\s*$/, '')} }` : swapped, variables: {} }
+  return [
+    variant,
+    { query: '{ users(first: 100) { edges { node { name email } } } }', variables: {} },
+    { query: '{ node(id: "a1") { id } }', variables: {} },
+  ]
+}
+async function replay(i) {
+  if (!lastTicket) return
+  const ride = otherRides(lastTicket)[i]
+  const r = await (await fetch('/demo/replay', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ...ride, credential: lastTicket.credential }) })).json()
+  const ok = r.status === 200 && r.body?.data
+  $('verdict').innerHTML = `<div class="verdict ${ok ? 'yes' : 'no'}"><div class="v">${ok ? 'ACCEPTED' : 'REJECTED · ' + r.status}</div>
+    <p class="note" style="margin-top:6px">Sent: <code>${esc(ride.query.replace(/\s+/g, ' ').slice(0, 90))}</code>${Object.keys(ride.variables).length ? ` with <code>${esc(JSON.stringify(ride.variables))}</code>` : ''}</p>
+    <p class="note">${ok ? 'This query needs no payment, so the ticket was not even checked.' : "The ticket's scope doesn't match this operation, so the server answered with a fresh Challenge. Nothing ran."}</p></div>`
+}
+
+// ── variables: sliders for numeric values
+function currentVariables() { try { return JSON.parse($('variables').value || '{}') } catch { return {} } }
+function renderSliders() {
+  const vars = currentVariables()
+  $('sliders').innerHTML = ''
+  for (const [k, v] of Object.entries(vars)) {
+    if (typeof v !== 'number') continue
+    const row = document.createElement('div')
+    row.className = 'slider'
+    row.innerHTML = `<b>$${esc(k)}</b><input type="range" min="0" max="150" value="${v}" aria-label="${esc(k)}"><output>${v}</output><span class="cap">Above 100 the server's page cap (maxListSize) applies: you pay for 100.</span>`
+    const input = row.querySelector('input'), out = row.querySelector('output')
+    const sync = () => { out.textContent = input.value; row.classList.toggle('capped', Number(input.value) > 100) }
+    input.oninput = () => {
+      const now = currentVariables(); now[k] = Number(input.value)
+      $('variables').value = JSON.stringify(now)
+      sync(); liveQuote()
+    }
+    sync()
+    $('sliders').append(row)
+  }
+}
+
+// ── live quote while typing: asks the real gate, without paying
+let liveTimer = 0, liveSeq = 0, busy = false
+function liveQuote() {
+  clearTimeout(liveTimer)
+  liveTimer = setTimeout(async () => {
+    if (busy) return
+    const seq = ++liveSeq
+    let variables
+    try { variables = JSON.parse($('variables').value || '{}') } catch { meterFoot(['variables are not JSON']); return }
+    lamp('live', 'LIVE QUOTE')
+    const r = await (await fetch('/demo/run', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ query: $('query').value, variables, pay: false }) })).json()
+    if (seq !== liveSeq || busy || !r.steps) return
+    const s = r.steps[0], err = s.body?.errors?.[0], price = err?.extensions?.price
+    if (s.status === 402 && price) { setFare(Number(price.amount), Math.max(4, String(price.amount).split('.')[1]?.length || 0)); meterFoot([`${price.breakdown.length} priced field${price.breakdown.length === 1 ? '' : 's'}`, 'live quote, unpaid']) }
+    else if (s.status < 300 && !err) { setFare(0); meterFoot(['free ride']) }
+    else { meterFoot([err?.extensions?.code ? err.extensions.code : 'not a valid query yet']) }
+  }, 380)
+}
+$('query').addEventListener('input', liveQuote)
+$('variables').addEventListener('input', () => { renderSliders(); liveQuote() })
+
+// ── trip log (this browser only)
+let trips = []
+try { trips = JSON.parse(localStorage.getItem('fareql-trips') || '[]') } catch {}
+function fieldName(q) { return (q.replace(/fragment[\s\S]*/, '').match(/[{(]\s*([A-Za-z_]\w*)\s*[(:{]?/) || [])[1] || 'query' }
+function logTrip(kind, fare) {
+  trips.unshift({ t: Date.now(), name: fieldName($('query').value), kind, fare })
+  trips = trips.slice(0, 30)
+  try { localStorage.setItem('fareql-trips', JSON.stringify(trips)) } catch {}
+  renderTrips()
+}
+function renderTrips() {
+  $('trips').innerHTML = trips.length
+    ? trips.map((x) => `<div class="trip"><time>${new Date(x.t).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</time><code>${esc(x.name)}</code><span class="k ${x.kind}">${x.kind}</span><span class="f">${x.kind === 'paid' || x.kind === 'quoted' ? esc(x.fare) : '–'}</span></div>`).join('')
+    : '<p class="note" style="margin:0">No rides yet.</p>'
+  const total = trips.filter((x) => x.kind === 'paid').reduce((n, x) => n + x.fare, 0)
+  $('totalPaid').textContent = `${Number(total.toFixed(6))} tokens`
+}
+$('clearTrips').onclick = () => { trips = []; try { localStorage.removeItem('fareql-trips') } catch {} ; renderTrips() }
+renderTrips()
 
 async function run(pay) {
   let variables = {}
   try { variables = JSON.parse($('variables').value || '{}') } catch { render({ error: 'Variables must be JSON' }); return }
   for (const b of [$('quote'), $('pay')]) b.disabled = true
+  busy = true; clearTimeout(liveTimer)
   route(['active', '', '', '']); lamp('', 'RUNNING')
   try {
     const r = await fetch('/demo/run', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ query: $('query').value, variables, pay }) })
     render(await r.json())
   } finally {
+    busy = false
     for (const b of [$('quote'), $('pay')]) b.disabled = false
   }
 }
