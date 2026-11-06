@@ -96,6 +96,22 @@ describe('useFareql (GraphQL Yoga plugin)', () => {
     expect(log.every((l) => l.amount !== '0.02')).toBe(true)
   })
 
+  it('refuses a priced operation in a one-item batch before charging', async () => {
+    const log: ChargeLog = []
+    const yoga = server(log)
+    const r = await yoga.fetch(
+      new Request('http://localhost/graphql', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', authorization: 'Payment whatever' },
+        body: JSON.stringify([{ query: '{ expensive { pages } }' }]),
+      }),
+    )
+    const b = await r.json()
+    expect(b[0].errors[0].extensions.code).toBe('BATCHING_NOT_SUPPORTED')
+    expect(r.headers.get('payment-receipt')).toBeNull()
+    expect(log).toHaveLength(0)
+  })
+
   it('allows free operations in batches but not priced ones', async () => {
     const log: ChargeLog = []
     const yoga = server(log)

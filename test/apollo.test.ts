@@ -61,6 +61,19 @@ describe('fareqlApolloPlugin (Apollo Server)', () => {
     expect(log).toHaveLength(0)
   })
 
+  it('hides the price in limit errors when exposePrice is false', async () => {
+    const server = new ApolloServer({ typeDefs, resolvers, plugins: [fareqlApolloPlugin({ charge: fakeCharge(), exposePrice: false, pricing: { maxPrice: '0.01' } })] })
+    await server.start()
+    const r = await server.executeHTTPGraphQLRequest({
+      httpGraphQLRequest: { method: 'POST', headers: new HeaderMap([['content-type', 'application/json']]), search: '', body: { query: '{ expensive { pages } }' } },
+      context: async () => ({}),
+    })
+    const text = r.body.kind === 'complete' ? r.body.string : ''
+    expect(text).toContain('PRICE_LIMIT_EXCEEDED')
+    expect(text).not.toContain('0.02')
+    expect(text).not.toContain('0.01')
+  })
+
   it('prices GET queries', async () => {
     const { run } = await setup()
     expect((await run('{ expensive { pages } }', {}, 'GET')).status).toBe(402)

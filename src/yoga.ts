@@ -111,13 +111,14 @@ export function useFareql(options: UseFareqlOptions): Plugin {
     const schema = options.schema ?? args.schema
     const input: OperationInput = { document: args.document, operationName: args.operationName, variables: args.variableValues }
     const request = options.getRequest?.(args.contextValue) ?? args.contextValue.request
-    let units: bigint
+    let price: ReturnType<typeof priceOperation>
     try {
-      units = priceOperation({ schema, ...input }, options.pricing).units
+      price = priceOperation({ schema, ...input }, options.pricing)
     } catch (e) {
       if (e instanceof PricingError) return { stop: reject(e), paid: false }
       throw e
     }
+    const units = price.units
     if (!request) {
       // No HTTP request to carry a Credential (e.g. graphql-ws): fail closed for priced operations.
       if (units === 0n) return { paid: false }
@@ -134,7 +135,7 @@ export function useFareql(options: UseFareqlOptions): Plugin {
       // One request carries one Credential, so priced operations cannot share a batch.
       return { stop: failure('Priced operations cannot be batched; send them one per request', { code: 'BATCHING_NOT_SUPPORTED' }, 400), paid: false }
     }
-    const outcome = await chargeOperations(forPayment(request), schema, [input], options)
+    const outcome = await chargeOperations(forPayment(request), schema, [input], options, [price])
     const stop = settle(request, outcome)
     if (!stop) allowed.set(request, (allowed.get(request) ?? 0) + 1)
     return { stop, paid: outcome.status === 'paid' }
@@ -163,7 +164,8 @@ export function useFareql(options: UseFareqlOptions): Plugin {
     onRequestParse({ request }) {
       return {
         onRequestParseDone({ requestParserResult }) {
-          if (Array.isArray(requestParserResult) && requestParserResult.length > 1) batches.add(request)
+          // Any array is a batch, even with one operation: Yoga answers it with an array.
+          if (Array.isArray(requestParserResult)) batches.add(request)
         },
       }
     },

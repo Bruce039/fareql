@@ -154,12 +154,17 @@ export async function chargeOperations(
   schema: GraphQLSchema,
   operations: readonly OperationInput[],
   options: FareOptions,
+  /** Prices already computed for `operations` (same order), to avoid pricing them twice. */
+  precomputed?: readonly OperationPrice[],
 ): Promise<ChargeOutcome> {
   const decimals = options.pricing?.decimals ?? 6
   let price: OperationPrice
   let info: OperationInfo
   try {
-    const prices = operations.map((o) => priceOperation({ schema, ...o }, options.pricing))
+    const prices =
+      precomputed && precomputed.length === operations.length
+        ? precomputed
+        : operations.map((o) => priceOperation({ schema, ...o }, options.pricing))
     price = sumPrices(prices, decimals)
     const max = options.pricing?.maxPrice
     if (max !== undefined && price.units > parseUnits(max, decimals)) throw new PriceLimitError(price.amount, max)
@@ -267,7 +272,8 @@ const CACHEABLE_QUERY_LENGTH = 32_768
 
 /** Small LRU of parse + validate results. Only short queries are cached, so memory stays bounded. */
 export function createDocumentCache(limits: DocumentLimits = {}, max = 1000) {
-  const entries = new Map<string, ParsedDocument>()
+  // Validation depends on the schema, so results are cached per schema (Yoga can swap schemas).
+  const bySchema = new WeakMap<GraphQLSchema, Map<string, ParsedDocument>>()
   const maxQueryLength = limits.maxQueryLength ?? 100_000
   const maxTokens = limits.maxTokens ?? 15_000
   const rules = limits.validationRules ? [...specifiedRules, ...limits.validationRules] : undefined
@@ -275,6 +281,11 @@ export function createDocumentCache(limits: DocumentLimits = {}, max = 1000) {
     get(schema: GraphQLSchema, query: string): ParsedDocument {
       if (query.length > maxQueryLength) {
         return { errors: [new GraphQLErrorClass(`Query is longer than ${maxQueryLength} characters`)] }
+      }
+      let entries = bySchema.get(schema)
+      if (!entries) {
+        entries = new Map()
+        bySchema.set(schema, entries)
       }
       const hit = entries.get(query)
       if (hit) {
@@ -297,7 +308,7 @@ export function createDocumentCache(limits: DocumentLimits = {}, max = 1000) {
       return result
     },
     clear() {
-      entries.clear()
+      // WeakMap entries go away with their schema; nothing to do eagerly.
     },
   }
 }

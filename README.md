@@ -122,7 +122,7 @@ export const POST = withPayment((req) => handler(req), { schema, charge: (o) => 
   - bodies on other methods, and mutations over GET.
 - `maxBodyBytes` (1 MB), `maxQueryLength` (100 000), `maxTokens` (15 000) and `maxBatchSize` (10) bound the work.
 - `validationRules` adds your server's extra rules, so operations they would reject are refused before payment.
-- APQ works: an unknown hash gets `PersistedQueryNotFound`, and the full query the client resends is priced. For trusted documents (`documentId`), pass `resolveDocument`.
+- APQ works without a hash store in the gate: a hash-only request gets `PersistedQueryNotFound` and the full query the client resends is priced, so nobody pays for a hash the handler doesn't know. To price hashes or trusted documents (`documentId`) from your own store, pass `resolveDocument`.
 - Batches are refused unless you set `batching: true`. With it, the whole batch is charged in one payment and `maxPrice` applies to the total.
 
 For full control, `createPaymentGate(options)(request)` returns one of `free`, `payment-required`, `paid` or `rejected`.

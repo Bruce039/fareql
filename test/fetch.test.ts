@@ -120,18 +120,45 @@ describe('createPaymentGate', () => {
     expect(params.variables.f).toBeInstanceOf(Blob)
   })
 
-  it('speaks APQ: unknown hashes get PersistedQueryNotFound, known ones are priced', async () => {
-    const gate = createPaymentGate({ schema, charge: fakeCharge() })
+  it('speaks APQ without a hash store of its own, so it never charges for a hash the handler may not know', async () => {
     const query = '{ expensive { pages } }'
     const ext = { extensions: { persistedQuery: { version: 1, sha256Hash: sha256(query) } } }
     const hashOnly = () => new Request('http://localhost/graphql', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(ext) })
-
+    const gate = createPaymentGate({ schema, charge: fakeCharge() })
+    expect((await gate(gql(query, undefined, {}, ext))).status).toBe('payment-required') // full query: priced
     const miss = await gate(hashOnly())
     expect(miss.status).toBe('rejected')
     expect((await body(miss as { response: Response })).errors[0].extensions.code).toBe('PERSISTED_QUERY_NOT_FOUND')
+    // With resolveDocument, hash-only requests are priced from your own store.
+    const known = createPaymentGate({ schema, charge: fakeCharge(), resolveDocument: (p) => (p.extensions ? query : undefined) })
+    expect(challengeOf(((await known(hashOnly())) as { response: Response }).response).amount).toBe('0.02')
+  })
 
-    expect((await gate(gql(query, undefined, {}, ext))).status).toBe('payment-required') // registers the hash
-    expect(challengeOf(((await gate(hashOnly())) as { response: Response }).response).amount).toBe('0.02')
+  it('stops reading a chunked body without content-length as soon as it passes maxBodyBytes', async () => {
+    const gate = createPaymentGate({ schema, charge: fakeCharge(), maxBodyBytes: 1000 })
+    let pulled = 0
+    const stream = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        pulled++
+        if (pulled > 10_000) return controller.close()
+        controller.enqueue(new TextEncoder().encode(' '.repeat(512)))
+      },
+    })
+    const req = new Request('http://localhost/graphql', { method: 'POST', headers: { 'content-type': 'application/json' }, body: stream, duplex: 'half' } as RequestInit)
+    const r = await gate(req)
+    expect(r.status).toBe('rejected')
+    if (r.status === 'rejected') expect(r.response.status).toBe(413)
+    expect(pulled).toBeLessThan(20)
+  })
+
+  it('re-validates when the schema changes', async () => {
+    const { buildSchema } = await import('graphql')
+    const { createDocumentCache } = await import('../src/core.js')
+    const cache = createDocumentCache()
+    const a = buildSchema(`${typeDefs.split('type Query')[0]} type Query { hello: String old: String @price(amount: "0.1") }`)
+    const b = buildSchema(`${typeDefs.split('type Query')[0]} type Query { hello: String }`)
+    expect(cache.get(a, '{ old }').errors).toBeUndefined()
+    expect(cache.get(b, '{ old }').errors?.length).toBeGreaterThan(0)
   })
 
   it('refuses a cheap query sent under an expensive persisted hash', async () => {

@@ -120,12 +120,39 @@ function normalize(value: unknown): GraphQLParams | GraphQLParams[] {
   return Array.isArray(value) ? value.map(checkParams) : checkParams(value)
 }
 
-async function readBody(request: Request, maxBytes: number): Promise<string> {
+const tooLarge = (maxBytes: number) => bad(`Request body is larger than ${maxBytes} bytes`, 413, 'PAYLOAD_TOO_LARGE')
+
+/** Reads a clone of the body as bytes, stopping as soon as it passes `maxBytes` (chunked bodies included). */
+async function readBytes(request: Request, maxBytes: number): Promise<Uint8Array<ArrayBuffer>> {
   const declared = Number(request.headers.get('content-length') ?? 'NaN')
-  if (declared > maxBytes) throw bad(`Request body is larger than ${maxBytes} bytes`, 413, 'PAYLOAD_TOO_LARGE')
-  const text = await request.clone().text()
-  if (text.length > maxBytes) throw bad(`Request body is larger than ${maxBytes} bytes`, 413, 'PAYLOAD_TOO_LARGE')
-  return text
+  if (declared > maxBytes) throw tooLarge(maxBytes)
+  const body = request.clone().body
+  if (!body) return new Uint8Array(new ArrayBuffer(0))
+  const reader = body.getReader()
+  const chunks: Uint8Array[] = []
+  let size = 0
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) break
+    size += value.byteLength
+    if (size > maxBytes) {
+      // Not awaited: cancelling one branch of a teed body can wait on the other branch.
+      reader.cancel().catch(() => {})
+      throw tooLarge(maxBytes)
+    }
+    chunks.push(value)
+  }
+  const out = new Uint8Array(new ArrayBuffer(size))
+  let offset = 0
+  for (const c of chunks) {
+    out.set(c, offset)
+    offset += c.byteLength
+  }
+  return out
+}
+
+async function readBody(request: Request, maxBytes: number): Promise<string> {
+  return new TextDecoder().decode(await readBytes(request, maxBytes))
 }
 
 /**
@@ -163,11 +190,10 @@ export async function readGraphQLParams(request: Request, options: ReadOptions =
     return fromSearchParams(new URLSearchParams(await readBody(request, maxBytes))) ?? checkParams({})
   }
   if (accepts('multipart/form-data')) {
-    const declared = Number(request.headers.get('content-length') ?? 'NaN')
-    if (declared > maxBytes) throw bad(`Request body is larger than ${maxBytes} bytes`, 413, 'PAYLOAD_TOO_LARGE')
+    const bytes = await readBytes(request, maxBytes)
     let form: FormData
     try {
-      form = await request.clone().formData()
+      form = await new Response(bytes, { headers: { 'content-type': request.headers.get('content-type') ?? '' } }).formData()
     } catch (e) {
       throw bad(`Invalid multipart body: ${(e as Error).message}`)
     }
@@ -198,7 +224,8 @@ export type GateOptions = FareOptions &
     maxBatchSize?: number
     /**
      * Looks up persisted documents (trusted documents, `documentId`, or APQ hashes your server
-     * stores itself). Without it, APQ still works: FareQL keeps its own hash → query cache.
+     * stores itself). Without it, hash-only APQ requests get PersistedQueryNotFound and the client
+     * resends the full query, which is then priced.
      */
     resolveDocument?: (params: GraphQLParams) => string | undefined | Promise<string | undefined>
   }
@@ -228,15 +255,12 @@ function apqHash(params: GraphQLParams): string | undefined {
   return typeof pq?.sha256Hash === 'string' ? pq.sha256Hash : undefined
 }
 
-const APQ_CACHEABLE_LENGTH = 32_768
-
 /**
  * Creates a framework-agnostic payment gate. Call it with each request before executing
  * GraphQL. It fails closed: anything it cannot read or price is answered, never executed.
  */
 export function createPaymentGate(options: GateOptions): (request: Request) => Promise<GateResult> {
   const documents = createDocumentCache(options)
-  const apq = new Map<string, string>()
   const exposePrice = options.exposePrice ?? true
   const maxBatchSize = options.maxBatchSize ?? 10
 
@@ -248,17 +272,15 @@ export function createPaymentGate(options: GateOptions): (request: Request) => P
         if ((await sha256Hex(params.query)) !== hash) {
           return rejectWith(400, 'PERSISTED_QUERY_HASH_MISMATCH', 'persistedQuery.sha256Hash does not match the query')
         }
-        if (params.query.length <= APQ_CACHEABLE_LENGTH) {
-          apq.set(hash, params.query)
-          if (apq.size > 1000) apq.delete(apq.keys().next().value as string)
-        }
       }
       return params.query
     }
-    const resolved = (await options.resolveDocument?.(params)) ?? (hash !== undefined ? apq.get(hash) : undefined)
+    const resolved = await options.resolveDocument?.(params)
     if (resolved) return resolved
     if (hash !== undefined) {
-      // Same reply as Apollo/Yoga: APQ clients resend the full query, which is then priced.
+      // Same reply as Apollo/Yoga: APQ clients resend the full query, which is then priced. The gate
+      // keeps no hash store of its own: the wrapped handler might not know the hash, and the client
+      // would pay for an operation that never runs.
       return reject(200, [{ message: 'PersistedQueryNotFound', extensions: { code: 'PERSISTED_QUERY_NOT_FOUND' } }], new RequestError('PersistedQueryNotFound', 200, 'PERSISTED_QUERY_NOT_FOUND'))
     }
     if (params.documentId) {

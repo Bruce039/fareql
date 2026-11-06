@@ -56,21 +56,24 @@ export function fareqlApolloPlugin<TContext extends BaseContext = BaseContext>(o
           const http = rc.request.http
           if (!http) return
           const input = { document: rc.document, operationName: rc.operationName ?? rc.request.operationName, variables: rc.request.variables }
-          let units: bigint
+          let price: ReturnType<typeof priceOperation>
           try {
-            units = priceOperation({ schema: rc.schema, ...input }, options.pricing).units
+            price = priceOperation({ schema: rc.schema, ...input }, options.pricing)
           } catch (e) {
-            if (e instanceof PricingError) throw fail(e.message, pricingErrorBody(e, exposePrice).extensions, 400)
+            if (e instanceof PricingError) {
+              const body = pricingErrorBody(e, exposePrice)
+              throw fail(body.message, body.extensions, 400)
+            }
             throw e
           }
-          if (units === 0n) return
+          if (price.units === 0n) return
           // Counted synchronously, before any await, so parallel batch pieces cannot race past it.
           const n = (pricedPieces.get(http.headers) ?? 0) + 1
           pricedPieces.set(http.headers, n)
           if (n > 1) {
             throw fail('Priced operations cannot be batched; send them one per request', { code: 'BATCHING_NOT_SUPPORTED' }, 400)
           }
-          const outcome = await chargeOperations(toFetchRequest(http, options.url), rc.schema, [input], options)
+          const outcome = await chargeOperations(toFetchRequest(http, options.url), rc.schema, [input], options, [price])
           switch (outcome.status) {
             case 'free':
               return

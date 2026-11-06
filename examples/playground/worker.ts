@@ -11,16 +11,24 @@ type Env = { DEMO_SECRET?: string }
 
 let handle: ((request: Request) => Promise<Response>) | undefined
 
-// Best-effort limit per isolate: 60 API calls per minute per client IP.
-const LIMIT = 60
+// Best-effort limit per isolate: 180 API calls per minute per client IP.
+const LIMIT = 180
 const hits = new Map<string, { n: number; reset: number }>()
 function limited(request: Request): boolean {
   const ip = request.headers.get('cf-connecting-ip') ?? 'anonymous'
   const now = Date.now()
   const h = hits.get(ip)
   if (!h || h.reset < now) {
+    hits.delete(ip)
     hits.set(ip, { n: 1, reset: now + 60_000 })
-    if (hits.size > 10_000) hits.clear()
+    if (hits.size > 10_000) {
+      // Evict expired windows first, then the oldest, so active clients keep their counts.
+      for (const [k, v] of hits) if (v.reset < now) hits.delete(k)
+      for (const k of hits.keys()) {
+        if (hits.size <= 9_000) break
+        hits.delete(k)
+      }
+    }
     return false
   }
   return ++h.n > LIMIT

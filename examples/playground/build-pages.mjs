@@ -9,7 +9,9 @@ const escaped = html.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 const importLine = new RegExp(`import\\s+(\\w+)\\s+from\\s+"\\./${escaped}";`)
 const match = importLine.exec(worker)
 if (!match) throw new Error('Page import not found in the bundle')
-worker = worker.replace(match[0], `const ${match[1]} = ${JSON.stringify(readFileSync(`.build/${html}`, 'utf8'))};`)
+// A replacer function, so "$" sequences in the page are not treated as replacement patterns.
+const inlined = `const ${match[1]} = ${JSON.stringify(readFileSync(`.build/${html}`, 'utf8'))};`
+worker = worker.replace(match[0], () => inlined)
 worker = worker.replace(/\n\/\/# sourceMappingURL=.*$/, '')
 mkdirSync('dist', { recursive: true })
 writeFileSync('dist/_worker.js', worker)
