@@ -1,5 +1,9 @@
 # FareQL
 
+[![npm](https://img.shields.io/npm/v/fareql)](https://www.npmjs.com/package/fareql)
+[![ci](https://github.com/Bruce039/fareql/actions/workflows/ci.yml/badge.svg)](https://github.com/Bruce039/fareql/actions/workflows/ci.yml)
+[![license](https://img.shields.io/npm/l/fareql)](https://github.com/Bruce039/fareql/blob/main/LICENSE)
+
 Charge for GraphQL operations over [MPP](https://mpp.dev) (HTTP 402), priced by what each operation selects.
 
 A GraphQL API is one endpoint, so a flat price per route doesn't fit it: `{ hello }` and `{ users(first: 100) { edges { node { email } } } }` hit the same URL. FareQL works out the fare of every operation from your schema and charges it through [`mppx`](https://github.com/wevm/mppx) with Tempo, Stripe or any other MPP method.
@@ -14,6 +18,15 @@ A GraphQL API is one endpoint, so a flat price per route doesn't fit it: `{ hell
 ```bash
 npm install fareql mppx graphql
 ```
+
+## How it works
+
+1. You mark what costs money in your schema: `@price(amount: "0.001")`.
+2. A client sends a query. FareQL prices it from what it selects. Free operations run as usual.
+3. A priced operation gets `402 Payment Required` with an MPP Challenge for that exact operation, plus the price and its breakdown.
+4. The client (an app, the `mppx` CLI, an AI agent) pays, for example in stablecoins on Tempo, and resends the query with the Credential. FareQL verifies it through mppx, runs the operation, and returns the data with a `Payment-Receipt`.
+
+Payments go straight to your own address. There is no account, API key or subscription for the client to set up.
 
 ## GraphQL Yoga
 
@@ -135,7 +148,15 @@ Content-Type: application/json; charset=utf-8
 }
 ```
 
-Any MPP client (`mppx`'s fetch wrapper, `npx mppx`, agents) pays and retries. The paid response carries `Payment-Receipt` and `Cache-Control: private` (or `private, no-store`), so no shared cache or CDN stores paid content. Set `exposePrice: false` to leave the price out of every error body.
+Clients need nothing from FareQL, only an MPP client. With the mppx CLI and a Tempo testnet wallet:
+
+```bash
+npx mppx account create && npx mppx account fund
+npx mppx https://api.example.com/graphql -X POST -H 'content-type: application/json' \
+  -d '{"query":"{ search(query: \"mpp\", first: 2) { snippet } }"}'
+```
+
+In code, `mppx/client` wraps `fetch` so 402s are paid and retried automatically, and MPP-aware agents do the same. The paid response carries `Payment-Receipt` and `Cache-Control: private` (or `private, no-store`), so no shared cache or CDN stores paid content. Set `exposePrice: false` to leave the price out of every error body.
 
 ## Security model
 
@@ -143,7 +164,7 @@ Any MPP client (`mppx`'s fetch wrapper, `npx mppx`, agents) pays and retries. Th
 - **Price what runs.** Yoga and Apollo are charged after the server's own parsing, validation and persisted-document lookup. `withPayment` refuses requests a handler could parse differently.
 - **Fail closed.** Unreadable, unpriceable, over-limit or ambiguous requests are answered with an error and never executed. Batches can't hold more than one paid operation per Credential.
 - **Bounded work.** Pricing is linear in the document, like graphql-js field collection. Token, length, depth, selection, body and batch limits keep it cheap.
-- **Tested by attack.** `test/attacks-*.test.ts` hold the red-team suites: pricing tricks, parser differentials, cache and plugin-order bypasses, scope collisions and DoS. Each test asserts the secure behaviour.
+- **Tested by attack.** [`test/attacks-*.test.ts`](https://github.com/Bruce039/fareql/tree/main/test) hold the red-team suites: pricing tricks, parser differentials, cache and plugin-order bypasses, scope collisions and DoS. Each test asserts the secure behaviour.
 
 ## Shared options
 
@@ -164,9 +185,9 @@ Any MPP client (`mppx`'s fetch wrapper, `npx mppx`, agents) pays and retries. Th
 
 ## Examples
 
-- [`examples/yoga-tempo`](examples/yoga-tempo/server.ts): GraphQL Yoga on Tempo's Moderato testnet
-- [`examples/apollo-tempo`](examples/apollo-tempo/server.ts): Apollo Server with a priced Relay-style connection
-- [`examples/playground`](examples/playground/server.ts): a local page that walks through quote → Challenge → Credential → Receipt. It uses a settlement-free demo method by default (`npx tsx examples/playground/server.ts`, then open http://localhost:4000), and real Moderato Challenges when `RECIPIENT` and `MPP_SECRET_KEY` are set
+- [`examples/yoga-tempo`](https://github.com/Bruce039/fareql/blob/main/examples/yoga-tempo/server.ts): GraphQL Yoga on Tempo's Moderato testnet
+- [`examples/apollo-tempo`](https://github.com/Bruce039/fareql/blob/main/examples/apollo-tempo/server.ts): Apollo Server with a priced Relay-style connection
+- [`examples/playground`](https://github.com/Bruce039/fareql/blob/main/examples/playground/server.ts): a local page that walks through quote → Challenge → Credential → Receipt. It uses a settlement-free demo method by default (`npx tsx examples/playground/server.ts`, then open http://localhost:4000), and real Moderato Challenges when `RECIPIENT` and `MPP_SECRET_KEY` are set
 
 ```bash
 MPP_SECRET_KEY=$(openssl rand -hex 32) RECIPIENT=0x… npx tsx examples/yoga-tempo/server.ts

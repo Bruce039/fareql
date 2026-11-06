@@ -1,6 +1,6 @@
 {
   "name": "fareql",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Charge for GraphQL operations over MPP (HTTP 402), priced by what each operation selects. Plugins for GraphQL Yoga and Apollo Server, plus a wrapper for any Fetch handler.",
   "type": "module",
   "license": "MIT",
