@@ -130,6 +130,23 @@ export const POST = withPayment((req) => handler(req), { schema, charge: (o) => 
 
 For full control, `createPaymentGate(options)(request)` returns one of `free`, `payment-required`, `paid` or `rejected`.
 
+## Mainnet or testnet
+
+FareQL doesn't pick a network. It prices the operation and hands the amount to mppx, and your mppx configuration decides where it is paid.
+
+```ts
+// Tempo mainnet: USDC.e
+tempo.charge({ currency: '0x20C000000000000000000000b9537d11c60E8b50', recipient: '0x…' })
+
+// Moderato testnet: pathUSD
+tempo.charge({ currency: '0x20c0000000000000000000000000000000000001', recipient: '0x…', testnet: true })
+```
+
+- **The examples and the playground** run on mainnet by default. Set `TEMPO_NETWORK=testnet` to use Moderato.
+- **Clients** read the network from the Challenge's `chainId`.
+  - The mppx CLI uses mainnet by default. Add `--network testnet` to pay a testnet API.
+  - Testnet funds come from `npx mppx account fund`.
+
 ## Pricing rules
 
 | Rule | Behaviour |

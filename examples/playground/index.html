@@ -337,6 +337,10 @@
   .dev h3 { margin: 0 0 8px; font: 800 18px var(--display); color: var(--taxi); }
   .dev pre { margin: 0; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12); color: #f3efe6; max-height: none; }
   .dev .c1 { color: #9fb7ff; } .dev .c2 { color: var(--taxi); } .dev .c3 { color: #8ee0bf; }
+  .netswitch { display: inline-flex; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.18); border-radius: 999px; padding: 3px; margin: 0 0 10px; }
+  .netswitch button { font: 700 13px var(--display); color: #f3efe6; background: transparent; border: 0; border-radius: 999px; padding: 7px 14px; cursor: pointer; }
+  .netswitch button.on { background: var(--taxi); color: var(--ink); }
+  .netnote { font-size: 13px; color: #cfc8ba; margin: 8px 0 0; }
   .copy { font: 700 14px var(--display); background: var(--taxi); color: var(--ink); border: 2px solid var(--taxi); border-radius: 12px; padding: 11px 16px; cursor: pointer; white-space: nowrap; }
   .copy.done { background: var(--mint-soft); border-color: var(--mint-soft); }
   .verified { display: inline-flex; align-items: center; gap: 8px; margin-top: 16px; font: 700 13px/1 var(--display); color: var(--mint); background: var(--mint-soft); border: 1.5px solid #bfe8d6; padding: 9px 14px; border-radius: 999px; text-decoration: none; transition: transform .15s; }
@@ -439,10 +443,10 @@
     </div>
     <div class="dev">
       <div>
-        <h3>For developers: three lines</h3>
-<pre><span class="c1">$</span> npm install fareql mppx graphql
-<span class="c2">type</span> Query { search(q: String!): [Hit!]! <span class="c2">@price</span>(amount: <span class="c3">"0.0005"</span>) }
-plugins: [<span class="c2">useFareql</span>({ charge: (o) =&gt; mppx.charge(o) })]</pre>
+        <h3>For developers: set up in a minute</h3>
+        <div class="netswitch" role="tablist" aria-label="Network"><button id="netMain" class="on" role="tab">Mainnet</button><button id="netTest" role="tab">Testnet</button></div>
+<pre id="devCode"></pre>
+        <p class="netnote" id="netNote"></p>
       </div>
       <button class="copy" id="copyInstall">Copy npm install</button>
     </div>
@@ -883,6 +887,27 @@ document.querySelectorAll('#steplist button').forEach((b) => (b.onclick = () => 
 $('howPlay').onclick = () => { howPlaying = !howPlaying; $('howPlay').textContent = howPlaying ? 'Pause' : 'Play'; howTick() }
 $('howPlay').textContent = howPlaying ? 'Pause' : 'Play'
 showStep(0); howTick()
+// ── network switch for the developer snippet (this page itself stays on demo payments)
+const NETS = {
+  mainnet: { token: '0x20C000000000000000000000b9537d11c60E8b50', name: 'USDC.e', extra: '', flag: '', note: 'Tempo mainnet: real USDC.e. Fund the paying account with a little USDC.e.' },
+  testnet: { token: '0x20c0000000000000000000000000000000000001', name: 'pathUSD', extra: ', testnet: <span class="c2">true</span>', flag: ' --network testnet', note: 'Moderato testnet: free pathUSD from `npx mppx account fund`. The CLI needs --network testnet.' },
+}
+let net = 'mainnet'
+try { if (localStorage.getItem('fareql-net') === 'testnet') net = 'testnet' } catch {}
+function showNet() {
+  const n = NETS[net]
+  $('netMain').classList.toggle('on', net === 'mainnet'); $('netTest').classList.toggle('on', net === 'testnet')
+  $('devCode').innerHTML = `<span class="c1">$</span> npm install fareql mppx graphql
+<span class="c2">tempo.charge</span>({ currency: <span class="c3">'${n.token}'</span> <span class="c1">/* ${n.name} */</span>, recipient: <span class="c3">'0x…'</span>${n.extra} })
+<span class="c2">type</span> Query { search(q: String!): [Hit!]! <span class="c2">@price</span>(amount: <span class="c3">"0.0005"</span>) }
+plugins: [<span class="c2">useFareql</span>({ charge: (o) =&gt; mppx.charge(o) })]
+<span class="c1">$</span> npx mppx https://your.api/graphql${n.flag} -J '{"query":"{ search(q: \\"mpp\\") { title } }"}'`
+  $('netNote').textContent = n.note
+}
+$('netMain').onclick = () => { net = 'mainnet'; try { localStorage.setItem('fareql-net', net) } catch {}; showNet() }
+$('netTest').onclick = () => { net = 'testnet'; try { localStorage.setItem('fareql-net', net) } catch {}; showNet() }
+showNet()
+
 $('copyInstall').onclick = async () => {
   try { await navigator.clipboard.writeText('npm install fareql mppx graphql'); $('copyInstall').textContent = 'Copied ✓'; $('copyInstall').classList.add('done') } catch { $('copyInstall').textContent = 'npm install fareql mppx graphql' }
   setTimeout(() => { $('copyInstall').textContent = 'Copy npm install'; $('copyInstall').classList.remove('done') }, 1800)
