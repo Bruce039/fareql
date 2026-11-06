@@ -232,7 +232,7 @@
   .linkbtn { background: none; border: 0; color: var(--muted); font: 600 12px var(--mono); cursor: pointer; text-decoration: underline; padding: 0; }
   /* plain words */
   .plain { padding: 8px 0 30px; }
-  .plain .kicker-row { font: 700 12px/1 var(--mono); letter-spacing: .16em; color: var(--coral); margin: 0 0 10px; }
+  .plain .kicker-row, .how .kicker-row { font: 700 12px/1 var(--mono); letter-spacing: .16em; color: var(--coral); margin: 0 0 10px; }
   .plain h2 { font: 800 clamp(28px, 3.8vw, 44px)/1.1 var(--display); letter-spacing: -0.03em; margin: 0 0 18px; }
   .plain .lead { color: var(--ink-soft); margin: 0 0 26px; max-width: 62ch; font-size: 17.5px; line-height: 1.7; }
   .steps3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; perspective: 1200px; }
@@ -288,6 +288,56 @@
     *, *::before, *::after { animation: none !important; transition: none !important; }
     .reveal { opacity: 1; transform: none; }
   }
+  /* top nav */
+  .nav { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+  .nav a { color: var(--ink); text-decoration: none; font: 700 14px var(--display); padding: 6px 2px; border-bottom: 2px solid transparent; }
+  .nav a:hover { border-color: var(--taxi); }
+  @media (max-width: 600px) { .nav a.opt { display: none; } }
+  /* how it works */
+  .how { padding: 10px 0 34px; scroll-margin-top: 20px; }
+  .how h2 { font: 800 clamp(28px, 3.8vw, 44px)/1.1 var(--display); letter-spacing: -0.03em; margin: 0 0 8px; }
+  .how .lead { color: var(--ink-soft); margin: 0 0 22px; max-width: 62ch; font-size: 17px; }
+  .how-grid { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 20px; align-items: stretch; }
+  @media (max-width: 960px) { .how-grid { grid-template-columns: minmax(0, 1fr); } }
+  .stagebox { background: var(--card); border: 1px solid var(--line); border-radius: 22px; box-shadow: var(--shadow); padding: 22px; position: relative; overflow: hidden; display: flex; flex-direction: column; }
+  .stagebox .wire { flex: 1; min-height: 150px; }
+  .caption { margin: 4px 0 14px; padding: 16px 18px; border-radius: 16px; background: var(--paper); border: 1.5px dashed var(--line); }
+  .caption .k { font: 700 11px/1 var(--mono); letter-spacing: .14em; color: var(--muted); }
+  .caption .h { font: 800 24px/1.2 var(--display); letter-spacing: -0.02em; margin: 6px 0 4px; }
+  .caption .p { color: var(--ink-soft); font-size: 15px; }
+  .caption.swap { animation: rise .45s cubic-bezier(.2,.8,.2,1) both; }
+  .actors { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .actor { border-radius: 16px; padding: 14px; text-align: center; font: 700 14px/1.3 var(--display); }
+  .actor small { display: block; font: 500 12px/1.4 "Manrope", sans-serif; color: var(--muted); margin-top: 2px; }
+  .actor.c { background: var(--sky-soft); } .actor.s { background: var(--taxi-soft); }
+  .actor svg { display: block; margin: 0 auto 6px; }
+  .actor.pulse { animation: pulse .9s ease-in-out 2; }
+  @keyframes pulse { 50% { transform: scale(1.05); box-shadow: 0 0 0 6px rgba(255,203,61,.35); } }
+  .wire { position: relative; height: 150px; margin: 14px 0 4px; }
+  .wire::before { content: ""; position: absolute; left: 12%; right: 12%; top: 50%; height: 3px; margin-top: -1.5px; background: repeating-linear-gradient(90deg, var(--line) 0 10px, transparent 10px 18px); }
+  .msg { position: absolute; top: 50%; left: 6%; transform: translate(0, -50%); max-width: 46%; font: 700 12.5px/1.35 var(--mono); padding: 10px 13px; border-radius: 12px; border: 2px solid var(--ink); background: var(--card); box-shadow: 0 4px 0 var(--ink); transition: left 1.1s cubic-bezier(.5,.05,.3,1), background .3s; white-space: nowrap; }
+  .msg.at-server { left: 54%; }
+  .msg.k-q { background: var(--sky-soft); } .msg.k-p { background: var(--taxi); } .msg.k-t { background: var(--lilac-soft); } .msg.k-d { background: var(--mint-soft); } .msg.k-x { background: var(--card); }
+  .msg .arrow { margin-right: 6px; }
+  .steplist { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+  .steplist button { width: 100%; text-align: left; display: grid; grid-template-columns: 30px 1fr; gap: 10px; align-items: start; background: var(--card); border: 1.5px solid var(--line); border-radius: 16px; padding: 12px 14px; cursor: pointer; font: inherit; color: inherit; transition: border-color .25s, transform .25s, box-shadow .25s; }
+  .steplist button:hover { border-color: var(--ink); }
+  .steplist .num2 { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font: 800 13px var(--display); background: var(--paper); border: 2px solid var(--line); }
+  .steplist b { font: 800 15.5px/1.25 var(--display); display: block; }
+  .steplist span.t { font-size: 14px; color: var(--ink-soft); display: block; margin-top: 2px; }
+  .steplist code { font: 600 11.5px var(--mono); color: var(--muted); display: block; margin-top: 4px; }
+  .steplist button.on { border-color: var(--ink); box-shadow: 0 4px 0 var(--ink); transform: translateY(-2px); }
+  .steplist button.on .num2 { background: var(--taxi); border-color: var(--ink); }
+  .controls { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+  .bar { flex: 1; height: 6px; border-radius: 6px; background: var(--paper); overflow: hidden; border: 1px solid var(--line); }
+  .bar i { display: block; height: 100%; width: 0; background: var(--sky); transition: width .5s; }
+  .dev { margin-top: 20px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 14px; align-items: center; background: var(--ink); color: #fff; border-radius: 20px; padding: 18px 20px; }
+  @media (max-width: 720px) { .dev { grid-template-columns: minmax(0, 1fr); } }
+  .dev h3 { margin: 0 0 8px; font: 800 18px var(--display); color: var(--taxi); }
+  .dev pre { margin: 0; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12); color: #f3efe6; max-height: none; }
+  .dev .c1 { color: #9fb7ff; } .dev .c2 { color: var(--taxi); } .dev .c3 { color: #8ee0bf; }
+  .copy { font: 700 14px var(--display); background: var(--taxi); color: var(--ink); border: 2px solid var(--taxi); border-radius: 12px; padding: 11px 16px; cursor: pointer; white-space: nowrap; }
+  .copy.done { background: var(--mint-soft); border-color: var(--mint-soft); }
   .code-chip { font: 600 12px var(--mono); background: var(--card); color: var(--coral); padding: 2px 8px; border-radius: 6px; }
 </style>
 </head>
@@ -311,7 +361,12 @@
       <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><rect x="3" y="7" width="28" height="22" rx="6" fill="#ffcb3d" stroke="#24211b" stroke-width="2"/><rect x="11" y="3" width="12" height="6" rx="2" fill="#24211b"/><rect x="7" y="12" width="20" height="8" rx="2" fill="#fff"/><circle cx="11" cy="25" r="2" fill="#24211b"/><circle cx="23" cy="25" r="2" fill="#24211b"/></svg>
       <span>Fare<b>QL</b></span>
     </div>
-    <span id="mode" class="chip"></span>
+    <nav class="nav">
+      <a href="#how">How it works</a>
+      <a href="#playground" class="opt">Playground</a>
+      <a href="https://github.com/Bruce039/fareql" target="_blank" rel="noopener" class="opt">GitHub</a>
+      <span id="mode" class="chip"></span>
+    </nav>
   </div>
 
   <section class="hero">
@@ -357,6 +412,37 @@
     </div>
   </section>
 
+  <section class="how reveal" id="how">
+    <p class="kicker-row">HOW IT WORKS</p>
+    <h2>One question, one quote, one ticket.</h2>
+    <p class="lead">The whole trip is a normal HTTP round trip with one extra stop. Watch it play, or click any step.</p>
+    <div class="how-grid">
+      <div class="stagebox">
+        <div class="actors">
+          <div class="actor c" id="actorC"><svg width="44" height="34" viewBox="0 0 44 34" aria-hidden="true"><rect x="5" y="3" width="34" height="22" rx="4" fill="#fff" stroke="#2f6fe0" stroke-width="2.5"/><path d="M2 29 h40" stroke="#2f6fe0" stroke-width="3" stroke-linecap="round"/><circle cx="16" cy="14" r="2.5" fill="#2f6fe0"/><circle cx="28" cy="14" r="2.5" fill="#2f6fe0"/></svg>Client or AI agent<small>asks for data</small></div>
+          <div class="actor s" id="actorS"><svg width="44" height="34" viewBox="0 0 44 34" aria-hidden="true"><rect x="8" y="2" width="28" height="9" rx="3" fill="#ffcb3d" stroke="#24211b" stroke-width="2"/><rect x="8" y="13" width="28" height="9" rx="3" fill="#ffcb3d" stroke="#24211b" stroke-width="2"/><rect x="8" y="24" width="28" height="9" rx="3" fill="#ffcb3d" stroke="#24211b" stroke-width="2"/><circle cx="14" cy="6.5" r="1.6" fill="#24211b"/><circle cx="14" cy="17.5" r="1.6" fill="#24211b"/><circle cx="14" cy="28.5" r="1.6" fill="#24211b"/></svg>Your API + FareQL<small>sells the answer</small></div>
+        </div>
+        <div class="wire"><div class="msg k-q" id="msg"><span class="arrow">→</span>{ search(first: 2) }</div></div>
+        <div class="caption" id="howCaption"><div class="k">STEP 1 OF 5</div><div class="h">Asks a question</div><div class="p">Your app or AI agent sends a normal GraphQL query.</div></div>
+        <div class="controls">
+          <button class="mini" id="howPlay">Pause</button>
+          <div class="bar"><i id="howBar"></i></div>
+        </div>
+      </div>
+      <ol class="steplist" id="steplist"></ol>
+    </div>
+    <div class="dev">
+      <div>
+        <h3>For developers: three lines</h3>
+<pre><span class="c1">$</span> npm install fareql mppx graphql
+<span class="c2">type</span> Query { search(q: String!): [Hit!]! <span class="c2">@price</span>(amount: <span class="c3">"0.0005"</span>) }
+plugins: [<span class="c2">useFareql</span>({ charge: (o) =&gt; mppx.charge(o) })]</pre>
+      </div>
+      <button class="copy" id="copyInstall">Copy npm install</button>
+    </div>
+  </section>
+
+  <div id="playground"></div>
   <div class="route" id="route">
     <div class="cab" id="cab"><svg viewBox="0 0 64 40" aria-hidden="true"><rect x="10" y="2" width="16" height="7" rx="2" fill="#24211b"/><path d="M6 18 Q10 8 22 8 H42 Q52 8 58 18 H60 Q63 18 63 22 V30 Q63 32 61 32 H3 Q1 32 1 30 V22 Q1 18 4 18 Z" fill="#ffcb3d" stroke="#24211b" stroke-width="2.5"/><path d="M14 17 Q17 11 23 11 H30 V17 Z M34 17 V11 H41 Q47 11 50 17 Z" fill="#e7f0ff" stroke="#24211b" stroke-width="2"/><circle cx="16" cy="32" r="6" fill="#24211b"/><circle cx="48" cy="32" r="6" fill="#24211b"/><circle cx="16" cy="32" r="2.4" fill="#fff"/><circle cx="48" cy="32" r="2.4" fill="#fff"/></svg></div>
     <div class="fill" id="routeFill"></div>
@@ -742,6 +828,44 @@ $('quote').onclick = () => run(false)
 $('pay').onclick = () => run(!moderato)
 if (moderato) $('pay').textContent = 'Pay with npx mppx ↓'
 route(['', '', '', ''])
+// ── how it works: a five-step round trip
+const howSteps = [
+  { at: 'server', k: 'q', arrow: '→', msg: '{ search(first: 2) }', title: 'Asks a question', text: 'Your app or AI agent sends a normal GraphQL query.', tech: 'POST /graphql' },
+  { at: 'server', k: 'x', arrow: '⚙', msg: '2 × (0.0005 + 0.0002)', title: 'Prices it', text: 'FareQL reads the prices in the schema and adds up exactly what was asked for.', tech: '@price · lists × size', pulse: 'S' },
+  { at: 'client', k: 'p', arrow: '←', msg: '402 · 0.0014 · price tag', title: 'Sends a quote', text: 'Nothing runs yet. The answer is the price and a price tag valid only for this question.', tech: '402 Payment Required + Challenge' },
+  { at: 'server', k: 't', arrow: '→', msg: 'same query + ticket', title: 'Pays and asks again', text: 'The client pays (a stablecoin on Tempo) and resends the same question with the proof.', tech: 'Authorization: Payment <Credential>', pulse: 'C' },
+  { at: 'client', k: 'd', arrow: '←', msg: '200 · data · receipt', title: 'Gets the answer', text: 'The ticket is checked, the query runs, and the answer comes back with a receipt.', tech: '200 OK + Payment-Receipt' },
+]
+let howI = 0, howTimer = 0, howPlaying = !reduced
+$('steplist').innerHTML = howSteps.map((s, i) => `<li><button data-i="${i}"><span class="num2">${i + 1}</span><span><b>${esc(s.title)}</b><span class="t">${esc(s.text)}</span><code>${esc(s.tech)}</code></span></button></li>`).join('')
+function showStep(i) {
+  howI = i
+  const s = howSteps[i], m = $('msg')
+  m.className = `msg k-${s.k}${s.at === 'server' ? ' at-server' : ''}`
+  if (i === 0) { m.style.transition = 'none'; m.classList.remove('at-server'); void m.offsetWidth; m.style.transition = ''; requestAnimationFrame(() => m.classList.add('at-server')) }
+  m.innerHTML = `<span class="arrow">${s.arrow}</span>${esc(s.msg)}`
+  document.querySelectorAll('#steplist button').forEach((b, j) => b.classList.toggle('on', j === i))
+  $('howBar').style.width = `${((i + 1) / howSteps.length) * 100}%`
+  const cap = $('howCaption')
+  cap.innerHTML = `<div class="k">STEP ${i + 1} OF ${howSteps.length}</div><div class="h">${esc(s.title)}</div><div class="p">${esc(s.text)}</div>`
+  cap.classList.remove('swap'); void cap.offsetWidth; if (!reduced) cap.classList.add('swap')
+  for (const a of ['C', 'S']) $(`actor${a}`).classList.remove('pulse')
+  if (s.pulse && !reduced) { void $(`actor${s.pulse}`).offsetWidth; $(`actor${s.pulse}`).classList.add('pulse') }
+}
+function howTick() {
+  clearTimeout(howTimer)
+  if (!howPlaying) return
+  howTimer = setTimeout(() => { showStep((howI + 1) % howSteps.length); howTick() }, howI === howSteps.length - 1 ? 3400 : 2400)
+}
+document.querySelectorAll('#steplist button').forEach((b) => (b.onclick = () => { showStep(Number(b.dataset.i)); howTick() }))
+$('howPlay').onclick = () => { howPlaying = !howPlaying; $('howPlay').textContent = howPlaying ? 'Pause' : 'Play'; howTick() }
+$('howPlay').textContent = howPlaying ? 'Pause' : 'Play'
+showStep(0); howTick()
+$('copyInstall').onclick = async () => {
+  try { await navigator.clipboard.writeText('npm install fareql mppx graphql'); $('copyInstall').textContent = 'Copied ✓'; $('copyInstall').classList.add('done') } catch { $('copyInstall').textContent = 'npm install fareql mppx graphql' }
+  setTimeout(() => { $('copyInstall').textContent = 'Copy npm install'; $('copyInstall').classList.remove('done') }, 1800)
+}
+
 // Deep links: #ride=3&pay, #dodge=0 (runs that example on load)
 ;(() => {
   const h = new URLSearchParams(location.hash.slice(1))
