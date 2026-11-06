@@ -1,5 +1,9 @@
-// FareQL playground on Cloudflare Workers (demo payments only, no money moves).
-//   cd examples/playground && npx wrangler deploy
+// FareQL playground on Cloudflare (demo payments only, no money moves), served as a Pages
+// project with this file as its `_worker.js`:
+//   cd examples/playground
+//   npx wrangler deploy --dry-run --outdir .build   # bundle (wrangler.toml holds the bundling config)
+//   node build-pages.mjs                            # → dist/_worker.js
+//   npx wrangler pages deploy dist --project-name fareql --branch main --no-bundle
 import page from './index.html'
 import { createPlayground } from './app.js'
 

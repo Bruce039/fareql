@@ -6,3 +6,5 @@ dist
 YAYIN-REHBERI.md
 docs/PROGRESS.md
 .wrangler
+.build
+examples/playground/dist
