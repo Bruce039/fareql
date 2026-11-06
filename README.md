@@ -6,6 +6,8 @@
 
 Charge for GraphQL operations over [MPP](https://mpp.dev) (HTTP 402), priced by what each operation selects.
 
+**[Try the live playground →](https://fareql.pages.dev)** (demo payments, no money moves)
+
 A GraphQL API is one endpoint, so a flat price per route doesn't fit it: `{ hello }` and `{ users(first: 100) { edges { node { email } } } }` hit the same URL. FareQL works out the fare of every operation from your schema and charges it through [`mppx`](https://github.com/wevm/mppx) with Tempo, Stripe or any other MPP method.
 
 - **Schema-driven prices.** `@price(amount: "0.001")` on fields and types, multiplied through lists, Relay connections and `@listSize`.
@@ -187,7 +189,7 @@ In code, `mppx/client` wraps `fetch` so 402s are paid and retried automatically,
 
 - [`examples/yoga-tempo`](https://github.com/Bruce039/fareql/blob/main/examples/yoga-tempo/server.ts): GraphQL Yoga on Tempo's Moderato testnet
 - [`examples/apollo-tempo`](https://github.com/Bruce039/fareql/blob/main/examples/apollo-tempo/server.ts): Apollo Server with a priced Relay-style connection
-- [`examples/playground`](https://github.com/Bruce039/fareql/blob/main/examples/playground/server.ts): a local page that walks through quote → Challenge → Credential → Receipt. It uses a settlement-free demo method by default (`npx tsx examples/playground/server.ts`, then open http://localhost:4000), and real Moderato Challenges when `RECIPIENT` and `MPP_SECRET_KEY` are set
+- [`examples/playground`](https://github.com/Bruce039/fareql/blob/main/examples/playground/app.ts) ([live demo](https://fareql.pages.dev)): a page that walks through quote → Challenge → Credential → Receipt. It uses a settlement-free demo method by default (`npx tsx examples/playground/server.ts`, then open http://localhost:4000), and real Moderato Challenges when `RECIPIENT` and `MPP_SECRET_KEY` are set
 
 ```bash
 MPP_SECRET_KEY=$(openssl rand -hex 32) RECIPIENT=0x… npx tsx examples/yoga-tempo/server.ts

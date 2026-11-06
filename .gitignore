@@ -5,3 +5,4 @@ dist
 *.tgz
 YAYIN-REHBERI.md
 docs/PROGRESS.md
+.wrangler

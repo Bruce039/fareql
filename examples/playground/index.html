@@ -197,6 +197,59 @@
   .total { display: flex; justify-content: space-between; align-items: baseline; margin-top: 12px; padding-top: 10px; border-top: 1.5px solid var(--ink); font: 700 14px var(--display); }
   .total span:last-child { font: 800 18px var(--mono); }
   .linkbtn { background: none; border: 0; color: var(--muted); font: 600 12px var(--mono); cursor: pointer; text-decoration: underline; padding: 0; }
+  /* plain words */
+  .plain { padding: 8px 0 30px; }
+  .plain h2 { font: 800 clamp(24px, 3.2vw, 34px)/1.1 var(--display); letter-spacing: -0.02em; margin: 0 0 6px; }
+  .plain > p { color: var(--muted); margin: 0 0 20px; max-width: 680px; }
+  .steps3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; perspective: 1200px; }
+  @media (max-width: 860px) { .steps3 { grid-template-columns: minmax(0, 1fr); } }
+  .step3 { background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 20px; box-shadow: var(--shadow); position: relative; overflow: hidden; }
+  .step3 .ill { height: 96px; display: grid; place-items: center; margin-bottom: 10px; border-radius: 14px; }
+  .step3:nth-child(1) .ill { background: var(--sky-soft); } .step3:nth-child(2) .ill { background: var(--taxi-soft); } .step3:nth-child(3) .ill { background: var(--mint-soft); }
+  .step3 .n { position: absolute; top: 14px; right: 16px; font: 800 44px/1 var(--display); color: var(--line); }
+  .step3 h3 { margin: 0 0 6px; font: 700 18px/1.25 var(--display); }
+  .step3 p { margin: 0; color: var(--muted); font-size: 14px; }
+  .who { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 18px; }
+  @media (max-width: 860px) { .who { grid-template-columns: minmax(0, 1fr); } }
+  .who div { border-radius: 16px; padding: 14px 16px; font-size: 14px; background: rgba(255,255,255,.65); border: 1.5px dashed var(--line); }
+  .who b { display: block; font: 700 15px var(--display); margin-bottom: 2px; }
+  .bob { animation: bob 3.2s ease-in-out infinite; }
+  @keyframes bob { 50% { transform: translateY(-6px); } }
+  /* 3D ticket around the meter */
+  .stage { perspective: 1400px; }
+  .flip { position: relative; transform-style: preserve-3d; transition: transform 1s cubic-bezier(.2,.8,.2,1); animation: float 6s ease-in-out infinite; }
+  .flip.flipped { transform: rotateY(180deg); animation: none; }
+  @keyframes float { 0%, 100% { transform: rotateX(4deg) rotateY(-8deg); } 50% { transform: rotateX(-3deg) rotateY(6deg) translateY(-6px); } }
+  .face { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+  .back { position: absolute; inset: 0; transform: rotateY(180deg); border-radius: 22px; background:
+      radial-gradient(circle at 0 50%, transparent 14px, var(--mint-soft) 14.5px) left / 51% 100% no-repeat,
+      radial-gradient(circle at 100% 50%, transparent 14px, var(--mint-soft) 14.5px) right / 51% 100% no-repeat;
+    border: 1px solid #bfe8d6; padding: 22px 30px; display: flex; flex-direction: column; justify-content: center; box-shadow: var(--shadow); }
+  .back .big { font: 800 40px/1 var(--display); color: var(--mint); letter-spacing: -0.02em; }
+  .back .line2 { font: 600 13px var(--mono); color: var(--muted); margin-top: 8px; }
+  .back .again { margin-top: 14px; align-self: flex-start; }
+  /* coins */
+  .coin { position: absolute; width: 26px; height: 26px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff3b0, var(--taxi) 45%, var(--taxi-deep)); border: 2px solid var(--taxi-deep); pointer-events: none; z-index: 5; animation: drop 1s cubic-bezier(.4,.1,.6,1) forwards; }
+  @keyframes drop { 0% { transform: translateY(-120px) rotateY(0); opacity: 0; } 15% { opacity: 1; } 100% { transform: translateY(40px) rotateY(720deg); opacity: 0; } }
+  /* taxi on the route */
+  .cab { position: absolute; top: -6px; left: 12.5%; width: 46px; margin-left: -23px; z-index: 3; transition: left .9s cubic-bezier(.3,.9,.3,1); filter: drop-shadow(0 4px 6px rgba(0,0,0,.15)); }
+  .cab.moving svg { animation: bounce .35s ease-in-out infinite; }
+  @keyframes bounce { 50% { transform: translateY(-3px); } }
+  .route { padding-top: 34px; }
+  .route::before, .route .fill { top: 51px !important; }
+  @media (max-width: 600px) { .route::before, .route .fill { top: 48px !important; } .cab { width: 36px; margin-left: -18px; } }
+  /* tilt + reveal */
+  .tilt { transition: transform .25s ease-out; transform-style: preserve-3d; will-change: transform; }
+  .reveal { opacity: 0; transform: translateY(18px); transition: opacity .7s ease, transform .7s cubic-bezier(.2,.8,.2,1); }
+  .reveal.in { opacity: 1; transform: none; }
+  /* plain-language tooltips */
+  .term { border-bottom: 2px dotted var(--sky); cursor: help; position: relative; }
+  .term:hover::after, .term:focus::after { content: attr(data-tip); position: absolute; left: 0; top: calc(100% + 8px); width: min(280px, 70vw); background: var(--ink); color: #fff; font: 500 13px/1.45 system-ui, sans-serif; padding: 10px 12px; border-radius: 10px; z-index: 20; box-shadow: var(--shadow); letter-spacing: 0; text-transform: none; }
+  .plainline { font-size: 14px; margin: 8px 0 0; padding: 8px 12px; border-radius: 10px; background: var(--sky-soft); }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+    .reveal { opacity: 1; transform: none; }
+  }
   .code-chip { font: 600 12px var(--mono); background: var(--card); color: var(--coral); padding: 2px 8px; border-radius: 6px; }
 </style>
 </head>
@@ -215,6 +268,7 @@
       <h1>Every query pays <em>its own fare.</em></h1>
       <p>FareQL prices each GraphQL operation by what it selects and charges it over MPP (HTTP 402). The meter quotes live while you type. Check the fare to get a real Challenge, then pay and ride to watch the whole trip: Challenge, Credential, data, Receipt.</p>
     </div>
+    <div class="stage"><div class="flip" id="flip"><div class="face">
     <div class="meter" aria-live="polite">
       <div class="meter-top"><span>TAXIMETER</span><span class="lamp" id="lamp"><i></i><span id="lampText">FOR HIRE</span></span></div>
       <div class="display">
@@ -222,15 +276,41 @@
         <div class="digits"><span id="fare">0.000000</span><small id="unit">tokens</small></div>
       </div>
       <div class="meter-foot" id="meterFoot"><span class="tag">pick a ride below</span></div>
+    </div></div>
+    <div class="face back" id="back" aria-hidden="true">
+      <div class="line2">RECEIPT · PAYMENT-RECEIPT HEADER</div>
+      <div class="big" id="backAmt">PAID</div>
+      <div class="line2" id="backRef">—</div>
+      <button class="mini again" id="again">New ride ↺</button>
+    </div>
+    </div></div>
+  </section>
+
+  <section class="plain reveal">
+    <h2>What is this, in plain words?</h2>
+    <p>Imagine an API as a shop that sells answers. Today you usually need an account, an API key and a monthly plan. With FareQL, every single question has its own small price, like a taxi fare, and anyone (a person, an app or an AI agent) can pay it on the spot.</p>
+    <div class="steps3">
+      <div class="step3 tilt"><span class="n">1</span><div class="ill"><svg class="bob" width="86" height="64" viewBox="0 0 86 64" aria-hidden="true"><rect x="4" y="6" width="58" height="40" rx="10" fill="#fff" stroke="#2f6fe0" stroke-width="3"/><path d="M18 46 L14 58 L30 46" fill="#fff" stroke="#2f6fe0" stroke-width="3" stroke-linejoin="round"/><text x="33" y="34" text-anchor="middle" font-family="JetBrains Mono, monospace" font-weight="700" font-size="18" fill="#2f6fe0">{ ? }</text><circle cx="72" cy="20" r="10" fill="#ffcb3d" stroke="#24211b" stroke-width="2"/></svg></div>
+        <h3>Ask a question</h3><p>Your app or AI agent asks the API for data, for example "the 20 newest users with their emails".</p></div>
+      <div class="step3 tilt"><span class="n">2</span><div class="ill"><svg class="bob" style="animation-delay:.4s" width="96" height="64" viewBox="0 0 96 64" aria-hidden="true"><rect x="6" y="10" width="84" height="44" rx="10" fill="#ffcb3d" stroke="#24211b" stroke-width="3"/><text x="48" y="40" text-anchor="middle" font-family="JetBrains Mono, monospace" font-weight="700" font-size="20" fill="#24211b">0.02</text><rect x="36" y="2" width="24" height="10" rx="3" fill="#24211b"/></svg></div>
+        <h3>See the exact price</h3><p>Before anything runs, the API answers with a quote: what it costs and why, field by field. Simple questions are free.</p></div>
+      <div class="step3 tilt"><span class="n">3</span><div class="ill"><svg class="bob" style="animation-delay:.8s" width="96" height="64" viewBox="0 0 96 64" aria-hidden="true"><circle cx="30" cy="34" r="20" fill="#ffcb3d" stroke="#b88400" stroke-width="3"/><text x="30" y="41" text-anchor="middle" font-family="Bricolage Grotesque, sans-serif" font-weight="800" font-size="18" fill="#24211b">¢</text><path d="M58 18 h30 v34 h-30 l4 -4 -4 -4 4 -4 -4 -4 4 -4 -4 -4 4 -4 z" fill="#e2f6ee" stroke="#1f9d74" stroke-width="3" stroke-linejoin="round"/><path d="M66 34 l5 5 9 -11" fill="none" stroke="#1f9d74" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <h3>Pay cents, get the answer</h3><p>The payment (a stablecoin on Tempo) goes straight to the API owner. The answer comes back with a receipt. No account, no subscription.</p></div>
+    </div>
+    <div class="who">
+      <div><b>API owners</b>Sell data per question instead of plans. One line in your GraphQL server.</div>
+      <div><b>AI agents</b>Pay as they go for exactly the data they use, with a spending limit.</div>
+      <div><b>Developers</b><code>npm install fareql</code>, mark prices with <code>@price</code>, done.</div>
     </div>
   </section>
 
   <div class="route" id="route">
+    <div class="cab" id="cab"><svg viewBox="0 0 64 40" aria-hidden="true"><rect x="10" y="2" width="16" height="7" rx="2" fill="#24211b"/><path d="M6 18 Q10 8 22 8 H42 Q52 8 58 18 H60 Q63 18 63 22 V30 Q63 32 61 32 H3 Q1 32 1 30 V22 Q1 18 4 18 Z" fill="#ffcb3d" stroke="#24211b" stroke-width="2.5"/><path d="M14 17 Q17 11 23 11 H30 V17 Z M34 17 V11 H41 Q47 11 50 17 Z" fill="#e7f0ff" stroke="#24211b" stroke-width="2"/><circle cx="16" cy="32" r="6" fill="#24211b"/><circle cx="48" cy="32" r="6" fill="#24211b"/><circle cx="16" cy="32" r="2.4" fill="#fff"/><circle cx="48" cy="32" r="2.4" fill="#fff"/></svg></div>
     <div class="fill" id="routeFill"></div>
     <div class="stop" data-i="0"><div class="dot">1</div><div class="name">Query</div><div class="hint">client asks</div></div>
-    <div class="stop" data-i="1"><div class="dot">2</div><div class="name">Fare quote</div><div class="hint">402 + Challenge</div></div>
-    <div class="stop" data-i="2"><div class="dot">3</div><div class="name">Pay</div><div class="hint">Credential</div></div>
-    <div class="stop" data-i="3"><div class="dot">4</div><div class="name">Ride</div><div class="hint">data + Receipt</div></div>
+    <div class="stop" data-i="1"><div class="dot">2</div><div class="name">Fare quote</div><div class="hint"><span class="term" tabindex="0" data-tip="HTTP 402 means 'Payment Required'. The server says what the question costs and sends a Challenge: a signed price tag for exactly this question.">402 + Challenge</span></div></div>
+    <div class="stop" data-i="2"><div class="dot">3</div><div class="name">Pay</div><div class="hint"><span class="term" tabindex="0" data-tip="The Credential is the proof of payment the client attaches when it asks again. It only works for the question it was bought for.">Credential</span></div></div>
+    <div class="stop" data-i="3"><div class="dot">4</div><div class="name">Ride</div><div class="hint"><span class="term" tabindex="0" data-tip="The answer comes back together with a Payment-Receipt header: the record that the payment was accepted.">data + Receipt</span></div></div>
   </div>
 
   <main>
@@ -365,9 +445,53 @@ function meterFoot(tags) { $('meterFoot').innerHTML = tags.map((t) => `<span cla
 // route
 function route(states) {
   document.querySelectorAll('.stop').forEach((s, i) => { s.className = `stop ${states[i] || ''}` })
-  const last = states.reduce((m, s, i) => (s === 'done' || s === 'active' ? i : m), 0)
-  $('routeFill').style.width = `${(last / 3) * 75}%`
+  const last = states.reduce((m, s, i) => (s === 'done' || s === 'active' || s === 'stopped' ? i : m), 0)
+  const reached = states.reduce((m, s, i) => (s === 'done' || s === 'active' ? i : m), 0)
+  $('routeFill').style.width = `${(reached / 3) * 75}%`
+  const cab = $('cab')
+  cab.style.left = `${12.5 + last * 25}%`
+  cab.classList.add('moving')
+  clearTimeout(cab._t)
+  cab._t = setTimeout(() => cab.classList.remove('moving'), 950)
 }
+
+// ── motion: coins, flip, tilt, reveal
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches
+function coins(n = 7) {
+  if (reduced) return
+  const meter = document.querySelector('.meter')
+  for (let i = 0; i < n; i++) {
+    const c = document.createElement('span')
+    c.className = 'coin'
+    c.style.left = `${20 + Math.random() * 60}%`
+    c.style.top = '40%'
+    c.style.animationDelay = `${i * 70}ms`
+    meter.append(c)
+    setTimeout(() => c.remove(), 1400 + i * 70)
+  }
+}
+function flipTo(paid, amount, ref) {
+  if (paid) {
+    $('backAmt').textContent = `PAID ${amount}`
+    $('backRef').textContent = ref || ''
+    coins()
+    setTimeout(() => $('flip').classList.add('flipped'), reduced ? 0 : 900)
+  } else $('flip').classList.remove('flipped')
+}
+$('again').onclick = () => flipTo(false)
+if (!reduced && matchMedia('(pointer: fine)').matches) {
+  document.querySelectorAll('.tilt').forEach((el) => {
+    el.addEventListener('pointermove', (e) => {
+      const r = el.getBoundingClientRect()
+      const x = (e.clientX - r.left) / r.width - 0.5, y = (e.clientY - r.top) / r.height - 0.5
+      el.style.transform = `rotateX(${(-y * 10).toFixed(2)}deg) rotateY(${(x * 12).toFixed(2)}deg) translateZ(6px)`
+    })
+    el.addEventListener('pointerleave', () => { el.style.transform = '' })
+  })
+}
+document.querySelectorAll('main .card').forEach((c) => c.classList.add('reveal'))
+const io = 'IntersectionObserver' in window ? new IntersectionObserver((es) => es.forEach((e) => e.isIntersecting && (e.target.classList.add('in'), io.unobserve(e.target))), { threshold: 0.08 }) : null
+document.querySelectorAll('.reveal').forEach((el) => (io ? io.observe(el) : el.classList.add('in')))
 
 const statusClass = (s) => (s === 402 ? 'st-402' : s < 300 ? 'st-200' : 'st-4xx')
 
@@ -387,6 +511,7 @@ function render(result) {
     cards.push(`<div class="slip quote">
       <div class="slip-head"><span class="status st-402">402 Payment Required</span><h3>Fare quote</h3></div>
       <div class="fare">${esc(price.amount)}<small>tokens</small></div>
+      <p class="plainline">In plain words: "This question costs ${esc(price.amount)}. Here is the bill and a price tag only valid for this exact question."</p>
       <table><thead><tr><th>Field</th><th class="r">Unit</th><th class="r">Rides</th><th class="r">Fare</th></tr></thead><tbody>${rows}</tbody>
       <tfoot><tr><td>Total</td><td></td><td></td><td class="r">${esc(price.amount)}</td></tr></tfoot></table>
       <dl class="kv"><dt>challenge</dt><dd>${esc(first.challenge?.id?.slice(0, 22))}…</dd><dt>scope</dt><dd><span class="scope">${esc(first.challenge?.scope)}</span></dd><dt>expires</dt><dd>${esc(first.challenge?.expires)}</dd></dl>
@@ -427,11 +552,13 @@ function render(result) {
     const cred = result.steps[1].credential || ''
     cards.push(`<div class="slip credential">
       <div class="slip-head"><h3>Ticket punched</h3></div>
+      <p class="plainline">In plain words: "The client paid and asks the same question again, holding up its ticket."</p>
       <p class="note">The mppx client signs the Challenge${moderato ? '' : ' (demo method, no money)'} and resends the same request with:</p>
       <pre>Authorization: ${esc(cred.slice(0, 120))}…</pre></div>`)
     lamp('ok', 'PAID')
     cards.push(`<div class="slip receipt"><span class="stamp paid">PAID</span>
       <div class="slip-head"><span class="status ${statusClass(paid.status)}">${paid.status} OK</span><h3>Enjoy the ride</h3></div>
+      <p class="plainline">In plain words: "Payment accepted. Here is your answer and your receipt."</p>
       <dl class="kv"><dt>receipt</dt><dd>${esc(paid.receipt?.method)} · ${esc(paid.receipt?.status)} · ${esc(paid.receipt?.reference)}</dd><dt>time</dt><dd>${esc(paid.receipt?.timestamp)}</dd><dt>cache-control</dt><dd>${esc(paid.headers['cache-control'])}</dd></dl>
       <pre>${json({ data: paid.body?.data })}</pre>
       <div class="replay">
@@ -446,6 +573,7 @@ function render(result) {
       </div></div>`)
     route(['done', 'done', 'done', 'done'])
     lastTicket = { credential: cred, query: $('query').value, variables: currentVariables() }
+    flipTo(true, price.amount, `${paid.receipt?.method ?? ''} · ${paid.receipt?.reference ?? ''}`)
     logTrip('paid', Number(price.amount))
   }
   j.innerHTML = cards.join('')
@@ -542,7 +670,7 @@ async function run(pay) {
   let variables = {}
   try { variables = JSON.parse($('variables').value || '{}') } catch { render({ error: 'Variables must be JSON' }); return }
   for (const b of [$('quote'), $('pay')]) b.disabled = true
-  busy = true; clearTimeout(liveTimer)
+  busy = true; clearTimeout(liveTimer); flipTo(false)
   route(['active', '', '', '']); lamp('', 'RUNNING')
   try {
     const r = await fetch('/demo/run', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ query: $('query').value, variables, pay }) })
