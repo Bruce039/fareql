@@ -4,110 +4,251 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>FareQL Playground</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
 <style>
   :root {
-    --bg: #f6f5f1; --panel: #ffffff; --ink: #1d1c1a; --muted: #6b6860; --line: #e4e1d8;
-    --accent: #c2410c; --accent-soft: #fff1e8; --ok: #15803d; --ok-soft: #e8f6ec;
-    --warn: #b45309; --warn-soft: #fdf3e2; --bad: #b91c1c; --bad-soft: #fdecec;
-    --code: #f1efe8; --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #141413; --panel: #1d1c1a; --ink: #ecebe6; --muted: #a09d94; --line: #33312d;
-      --accent: #fb923c; --accent-soft: #3a2416; --ok: #4ade80; --ok-soft: #15291c;
-      --warn: #fbbf24; --warn-soft: #33270f; --bad: #f87171; --bad-soft: #3a1717; --code: #262522;
-    }
+    --paper: #fbf8f1; --card: #ffffff; --ink: #24211b; --muted: #7d766a; --line: #ece5d6;
+    --taxi: #ffcb3d; --taxi-soft: #fff6d9; --taxi-deep: #b88400;
+    --mint: #1f9d74; --mint-soft: #e2f6ee; --sky: #2f6fe0; --sky-soft: #e7f0ff;
+    --coral: #e2484f; --coral-soft: #fdebea; --lilac: #7c5cd6; --lilac-soft: #f0ebff;
+    --display: "Bricolage Grotesque", ui-rounded, system-ui, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+    --shadow: 0 1px 0 rgba(36, 33, 27, 0.04), 0 8px 24px -12px rgba(36, 33, 27, 0.18);
   }
   * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
-  header { padding: 28px 24px 8px; max-width: 1240px; margin: 0 auto; }
-  h1 { margin: 0; font-size: 26px; letter-spacing: -0.01em; }
-  h1 span { color: var(--accent); }
-  .sub { color: var(--muted); margin: 6px 0 0; max-width: 760px; }
-  .badge { display: inline-block; margin-left: 10px; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; vertical-align: middle; }
-  .badge.demo { background: var(--ok-soft); color: var(--ok); }
-  .badge.moderato { background: var(--warn-soft); color: var(--warn); }
-  main { max-width: 1240px; margin: 0 auto; padding: 16px 24px 48px; display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 20px; }
-  @media (max-width: 900px) { main { grid-template-columns: 1fr; padding: 16px; } header { padding: 20px 16px 4px; } }
-  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px; }
-  .panel h2 { margin: 0 0 10px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
-  .presets { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
-  .presets button { border: 1px solid var(--line); background: var(--bg); color: var(--ink); border-radius: 999px; padding: 5px 12px; font: inherit; font-size: 13px; cursor: pointer; }
-  .presets button:hover { border-color: var(--accent); }
-  .presets button.attack { color: var(--bad); }
-  label { display: block; font-size: 12px; color: var(--muted); margin: 10px 0 4px; }
-  textarea { width: 100%; border: 1px solid var(--line); border-radius: 10px; background: var(--code); color: var(--ink); font: 13px/1.5 var(--mono); padding: 10px 12px; resize: vertical; }
-  textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
-  .actions { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
-  .actions button { font: inherit; font-weight: 600; border-radius: 10px; padding: 9px 16px; cursor: pointer; border: 1px solid var(--accent); }
-  .primary { background: var(--accent); color: #fff; }
-  .secondary { background: transparent; color: var(--accent); }
-  .schema { margin-top: 18px; }
-  pre { margin: 0; background: var(--code); border-radius: 10px; padding: 10px 12px; overflow-x: auto; font: 12.5px/1.55 var(--mono); }
-  .sdl .price { color: var(--accent); font-weight: 600; }
-  .timeline { display: grid; gap: 14px; }
-  .empty { color: var(--muted); padding: 40px 10px; text-align: center; }
-  .step { border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; background: var(--panel); }
-  .step-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-  .num { width: 24px; height: 24px; border-radius: 50%; background: var(--ink); color: var(--panel); display: grid; place-items: center; font-size: 12px; font-weight: 700; flex: none; }
-  .step-title { font-weight: 600; }
-  .pill { padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; font-family: var(--mono); }
-  .s2 { background: var(--ok-soft); color: var(--ok); } .s4p { background: var(--accent-soft); color: var(--accent); } .s4 { background: var(--bad-soft); color: var(--bad); }
-  .price-big { font-size: 30px; font-weight: 700; margin: 10px 0 2px; letter-spacing: -0.02em; }
-  .price-big small { font-size: 14px; color: var(--muted); font-weight: 500; }
-  table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 13px; }
-  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); }
-  th { color: var(--muted); font-weight: 500; font-size: 12px; }
-  td.num-c, th.num-c { text-align: right; font-family: var(--mono); }
-  td code { font-family: var(--mono); font-size: 12.5px; }
-  .kv { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; font-size: 13px; margin: 8px 0; }
-  .kv dt { color: var(--muted); } .kv dd { margin: 0; font-family: var(--mono); word-break: break-all; }
-  details { margin-top: 8px; } summary { cursor: pointer; color: var(--muted); font-size: 13px; }
-  details pre { margin-top: 6px; max-height: 260px; }
-  .note { font-size: 13px; color: var(--muted); margin: 8px 0 0; }
-  .err { color: var(--bad); font-weight: 600; margin: 8px 0 0; }
+  body {
+    margin: 0; color: var(--ink); font: 15px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
+    background:
+      radial-gradient(1200px 500px at 85% -10%, var(--taxi-soft), transparent 60%),
+      radial-gradient(900px 500px at -10% 10%, var(--sky-soft), transparent 55%),
+      var(--paper);
+    min-height: 100vh;
+  }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 0 24px; }
+  @media (max-width: 720px) { .wrap { padding: 0 16px; } }
+
+  /* top bar */
+  .top { display: flex; align-items: center; justify-content: space-between; padding: 20px 0 6px; gap: 12px; flex-wrap: wrap; }
+  .logo { display: flex; align-items: center; gap: 10px; font: 800 22px/1 var(--display); letter-spacing: -0.02em; }
+  .logo b { background: var(--taxi); padding: 2px 7px; border-radius: 8px; margin-left: 1px; }
+  .chip { font: 600 12px/1 var(--mono); padding: 7px 12px; border-radius: 999px; border: 1.5px dashed currentColor; }
+  .chip.demo { color: var(--mint); background: var(--mint-soft); }
+  .chip.moderato { color: var(--taxi-deep); background: var(--taxi-soft); }
+
+  /* hero */
+  .hero { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 28px; align-items: center; padding: 26px 0 18px; }
+  @media (max-width: 900px) { .hero { grid-template-columns: minmax(0, 1fr); } }
+  .hero h1 { font: 800 clamp(34px, 5vw, 56px)/1.02 var(--display); letter-spacing: -0.035em; margin: 0; }
+  .hero h1 em { font-style: normal; background: linear-gradient(transparent 62%, var(--taxi) 62%); }
+  .hero p { color: var(--muted); max-width: 560px; margin: 14px 0 0; font-size: 16px; }
+
+  /* taxi meter */
+  .meter { background: var(--card); border-radius: 22px; padding: 18px; box-shadow: var(--shadow); border: 1px solid var(--line); position: relative; }
+  .meter-top { display: flex; justify-content: space-between; align-items: center; font: 700 11px/1 var(--mono); letter-spacing: 0.18em; color: var(--muted); }
+  .lamp { display: inline-flex; align-items: center; gap: 6px; }
+  .lamp i { width: 9px; height: 9px; border-radius: 50%; background: var(--line); transition: background .3s, box-shadow .3s; }
+  .lamp.on i { background: var(--coral); box-shadow: 0 0 0 4px var(--coral-soft); }
+  .lamp.ok i { background: var(--mint); box-shadow: 0 0 0 4px var(--mint-soft); }
+  .display { margin-top: 12px; background: var(--taxi); border-radius: 14px; padding: 16px 18px 12px; box-shadow: inset 0 -4px 0 rgba(0,0,0,.08); }
+  .display .label { font: 700 11px/1 var(--mono); letter-spacing: .2em; opacity: .65; }
+  .digits { font: 700 clamp(36px, 6vw, 54px)/1.05 var(--mono); letter-spacing: -0.02em; margin-top: 6px; font-variant-numeric: tabular-nums; }
+  .digits small { font-size: 16px; opacity: .6; margin-left: 6px; }
+  .meter-foot { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  .tag { font: 600 12px/1 var(--mono); padding: 6px 10px; border-radius: 8px; background: var(--paper); border: 1px solid var(--line); color: var(--muted); }
+
+  /* route map */
+  .route { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); position: relative; margin: 10px 0 26px; }
+  .route::before { content: ""; position: absolute; left: 12.5%; right: 12.5%; top: 17px; height: 6px; border-radius: 6px; background: repeating-linear-gradient(90deg, var(--line) 0 14px, transparent 14px 22px); }
+  .route .fill { position: absolute; left: 12.5%; top: 17px; height: 6px; border-radius: 6px; background: var(--sky); width: 0; transition: width .7s cubic-bezier(.2,.8,.2,1); }
+  .stop { text-align: center; position: relative; z-index: 1; }
+  .dot { width: 40px; height: 40px; border-radius: 50%; margin: 0 auto; background: var(--card); border: 3px solid var(--line); display: grid; place-items: center; font: 800 14px/1 var(--display); color: var(--muted); transition: all .35s; }
+  .stop .name { font: 700 13px/1.2 var(--display); margin-top: 8px; }
+  .stop .hint { font-size: 12px; color: var(--muted); }
+  .stop.done .dot { border-color: var(--sky); background: var(--sky); color: #fff; }
+  .stop.active .dot { border-color: var(--taxi-deep); background: var(--taxi); color: var(--ink); transform: scale(1.12); }
+  .stop.stopped .dot { border-color: var(--coral); background: var(--coral-soft); color: var(--coral); }
+
+  /* grid */
+  main { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 22px; padding-bottom: 56px; }
+  @media (max-width: 960px) { main { grid-template-columns: minmax(0, 1fr); } }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 20px; box-shadow: var(--shadow); }
+  .card + .card { margin-top: 22px; }
+  .eyebrow { font: 700 11px/1 var(--mono); letter-spacing: .18em; text-transform: uppercase; color: var(--muted); margin: 0 0 12px; display: flex; align-items: center; gap: 8px; }
+  .eyebrow::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+
+  .tickets { display: flex; flex-wrap: wrap; gap: 8px; }
+  .ticket {
+    position: relative; border: 0; cursor: pointer; font: 600 13px/1 var(--display); color: var(--ink);
+    padding: 10px 14px 10px 16px; border-radius: 10px; background: var(--sky-soft); transition: transform .15s, box-shadow .15s;
+  }
+  .ticket::before { content: ""; position: absolute; left: -5px; top: 50%; width: 10px; height: 10px; margin-top: -5px; border-radius: 50%; background: var(--card); }
+  .ticket .p { font-family: var(--mono); font-size: 11px; opacity: .7; margin-left: 6px; }
+  .ticket:hover { transform: translateY(-2px); box-shadow: 0 6px 14px -8px rgba(47,111,224,.6); }
+  .ticket.free { background: var(--mint-soft); }
+  .ticket.dodge { background: var(--coral-soft); }
+  .ticket.active { outline: 2px solid var(--ink); }
+  .sub-eyebrow { font: 700 12px/1 var(--display); color: var(--coral); margin: 16px 0 8px; }
+
+  label { display: block; font: 600 12px/1 var(--mono); color: var(--muted); margin: 16px 0 6px; letter-spacing: .04em; }
+  textarea { width: 100%; border: 1.5px solid var(--line); border-radius: 14px; background: var(--paper); color: var(--ink); font: 13px/1.6 var(--mono); padding: 12px 14px; resize: vertical; }
+  textarea:focus { outline: none; border-color: var(--sky); box-shadow: 0 0 0 4px var(--sky-soft); }
+  .actions { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+  .btn { font: 700 15px/1 var(--display); border-radius: 14px; padding: 13px 18px; cursor: pointer; border: 2px solid var(--ink); transition: transform .12s, box-shadow .12s; }
+  .btn:active { transform: translateY(2px); box-shadow: none !important; }
+  .btn.quote { background: var(--card); box-shadow: 0 4px 0 var(--ink); }
+  .btn.pay { background: var(--taxi); box-shadow: 0 4px 0 var(--ink); }
+  .btn:disabled { opacity: .5; cursor: wait; }
+
+  /* fare chart */
+  .chart { display: grid; gap: 6px; }
+  .row { display: flex; align-items: baseline; gap: 8px; font-size: 13.5px; }
+  .row code { font: 600 13px var(--mono); }
+  .row .lead { flex: 1; border-bottom: 2px dotted var(--line); transform: translateY(-4px); }
+  .row .amt { font: 700 13px var(--mono); background: var(--taxi-soft); color: var(--taxi-deep); padding: 3px 8px; border-radius: 6px; }
+  .row .kind { font: 600 11px var(--mono); color: var(--lilac); background: var(--lilac-soft); padding: 2px 6px; border-radius: 5px; }
+  .note { font-size: 13px; color: var(--muted); margin: 10px 0 0; }
+  details summary { cursor: pointer; font: 600 12px var(--mono); color: var(--muted); margin-top: 12px; }
+  pre { margin: 8px 0 0; background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; overflow-x: auto; font: 12.5px/1.6 var(--mono); max-height: 320px; }
+
+  /* journey */
+  .journey { display: grid; gap: 18px; grid-template-columns: minmax(0, 1fr); }
+  .slip pre, .slip table { max-width: 100%; }
+  .slip { min-width: 0; }
+  .empty { text-align: center; padding: 50px 20px; color: var(--muted); }
+  .empty .big { font: 800 22px/1.2 var(--display); color: var(--ink); margin-bottom: 6px; }
+  .slip { position: relative; border-radius: 16px; padding: 18px 20px; background: var(--card); border: 1.5px solid var(--line); animation: rise .45s cubic-bezier(.2,.8,.2,1) both; }
+  .slip:nth-child(2) { animation-delay: .12s; } .slip:nth-child(3) { animation-delay: .24s; }
+  @keyframes rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+  .slip-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .slip-head h3 { margin: 0; font: 700 17px/1.2 var(--display); }
+  .status { font: 700 12px/1 var(--mono); padding: 6px 10px; border-radius: 8px; }
+  .st-402 { background: var(--taxi); } .st-200 { background: var(--mint-soft); color: var(--mint); } .st-4xx { background: var(--coral-soft); color: var(--coral); }
+  .slip.quote { background: linear-gradient(var(--taxi-soft), var(--card) 120px); border-color: #f3dd9a; }
+  .slip.credential { background: var(--lilac-soft); border: 1.5px dashed var(--lilac); }
+  .slip.credential::before, .slip.credential::after { content: ""; position: absolute; top: 50%; width: 22px; height: 22px; margin-top: -11px; border-radius: 50%; background: var(--card); border: 1.5px dashed var(--lilac); }
+  .slip.credential::before { left: -12px; } .slip.credential::after { right: -12px; }
+  .slip.receipt { border: 0; padding-bottom: 26px; background:
+      radial-gradient(circle at 10px 100%, transparent 8px, var(--card) 8.5px) bottom left / 20px 12px repeat-x,
+      linear-gradient(var(--card), var(--card)) top / 100% calc(100% - 11px) no-repeat;
+    filter: drop-shadow(0 6px 14px rgba(36,33,27,.12)); }
+  .slip.refused { background: var(--coral-soft); border-color: #f5c3c1; overflow: hidden; }
+  .stamp { position: absolute; right: 18px; top: 16px; transform: rotate(-12deg); font: 800 18px/1 var(--display); letter-spacing: .12em; color: var(--coral); border: 3px solid var(--coral); border-radius: 10px; padding: 8px 12px; opacity: .85; animation: stamp .35s cubic-bezier(.3,1.6,.5,1) .2s both; }
+  .stamp.paid { color: var(--mint); border-color: var(--mint); }
+  @keyframes stamp { from { opacity: 0; transform: rotate(-12deg) scale(1.8); } to { opacity: .85; transform: rotate(-12deg) scale(1); } }
+  .fare { font: 800 40px/1 var(--display); letter-spacing: -0.03em; margin: 14px 0 4px; }
+  .fare small { font: 600 13px var(--mono); color: var(--muted); margin-left: 6px; }
+  table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+  th { text-align: left; font: 600 11px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding: 6px 4px; border-bottom: 1.5px solid var(--ink); }
+  td { padding: 8px 4px; border-bottom: 1px dashed var(--line); font-family: var(--mono); }
+  .r { text-align: right; }
+  tfoot td { border: 0; font-weight: 700; padding-top: 10px; }
+  .kv { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin-top: 14px; font-size: 13px; }
+  .kv dt { color: var(--muted); font: 600 12px var(--mono); }
+  .kv dd { margin: 0; font-family: var(--mono); word-break: break-all; }
+  .scope { background: var(--sky-soft); color: var(--sky); padding: 1px 6px; border-radius: 5px; }
+  .why { margin-top: 12px; font-size: 13.5px; padding: 10px 12px; border-radius: 12px; background: rgba(255,255,255,.7); border: 1px solid var(--line); }
+  .err { font: 600 14px/1.5 var(--mono); color: var(--coral); margin: 12px 0 0; padding-right: 120px; }
+  @media (max-width: 600px) {
+    .hero h1 { font-size: 36px; }
+    .stop .hint { display: none; }
+    .stop .name { font-size: 12px; }
+    .dot { width: 34px; height: 34px; }
+    .route::before, .route .fill { top: 14px; }
+    .card { padding: 16px; border-radius: 16px; }
+    .slip { padding: 16px; }
+    .stamp { font-size: 14px; padding: 6px 9px; right: 12px; top: 12px; }
+    .err { padding-right: 0; }
+    .slip.refused .slip-head { padding-right: 96px; }
+    th:nth-child(2), td:nth-child(2) { display: none; }
+    .fare { font-size: 34px; }
+  }
+  html, body { overflow-x: clip; }
+  .code-chip { font: 600 12px var(--mono); background: var(--card); color: var(--coral); padding: 2px 8px; border-radius: 6px; }
 </style>
 </head>
 <body>
-<header>
-  <h1>Fare<span>QL</span> Playground <span id="mode" class="badge"></span></h1>
-  <p class="sub">Every GraphQL operation is priced by what it selects. Ask for a quote to see the real <code>402 Payment Required</code> with its MPP Challenge and price breakdown, or pay and run to watch the whole loop: Challenge → Credential → data with a <code>Payment-Receipt</code>.</p>
-</header>
-<main>
-  <section class="panel">
-    <h2>Operation</h2>
-    <div class="presets" id="presets"></div>
-    <label for="query">Query</label>
-    <textarea id="query" rows="9" spellcheck="false"></textarea>
-    <label for="variables">Variables (JSON)</label>
-    <textarea id="variables" rows="2" spellcheck="false">{}</textarea>
-    <div class="actions">
-      <button class="secondary" id="quote">Get quote (send unpaid)</button>
-      <button class="primary" id="pay">Pay &amp; run</button>
+<div class="wrap">
+  <div class="top">
+    <div class="logo">
+      <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><rect x="3" y="7" width="28" height="22" rx="6" fill="#ffcb3d" stroke="#24211b" stroke-width="2"/><rect x="11" y="3" width="12" height="6" rx="2" fill="#24211b"/><rect x="7" y="12" width="20" height="8" rx="2" fill="#fff"/><circle cx="11" cy="25" r="2" fill="#24211b"/><circle cx="23" cy="25" r="2" fill="#24211b"/></svg>
+      <span>Fare<b>QL</b></span>
     </div>
-    <div class="schema">
-      <h2>Schema and prices</h2>
-      <pre class="sdl" id="sdl"></pre>
+    <span id="mode" class="chip"></span>
+  </div>
+
+  <section class="hero">
+    <div>
+      <h1>Every query pays <em>its own fare.</em></h1>
+      <p>FareQL prices each GraphQL operation by what it selects and charges it over MPP (HTTP 402). Check the fare to get a real Challenge, then pay and ride to watch the whole trip: Challenge, Credential, data, Receipt.</p>
+    </div>
+    <div class="meter" aria-live="polite">
+      <div class="meter-top"><span>TAXIMETER</span><span class="lamp" id="lamp"><i></i><span id="lampText">FOR HIRE</span></span></div>
+      <div class="display">
+        <div class="label">FARE</div>
+        <div class="digits"><span id="fare">0.000000</span><small id="unit">tokens</small></div>
+      </div>
+      <div class="meter-foot" id="meterFoot"><span class="tag">pick a ride below</span></div>
     </div>
   </section>
-  <section class="panel">
-    <h2>What happened</h2>
-    <div class="timeline" id="timeline"><div class="empty">Pick an example or write a query, then press a button.</div></div>
-  </section>
-</main>
+
+  <div class="route" id="route">
+    <div class="fill" id="routeFill"></div>
+    <div class="stop" data-i="0"><div class="dot">1</div><div class="name">Query</div><div class="hint">client asks</div></div>
+    <div class="stop" data-i="1"><div class="dot">2</div><div class="name">Fare quote</div><div class="hint">402 + Challenge</div></div>
+    <div class="stop" data-i="2"><div class="dot">3</div><div class="name">Pay</div><div class="hint">Credential</div></div>
+    <div class="stop" data-i="3"><div class="dot">4</div><div class="name">Ride</div><div class="hint">data + Receipt</div></div>
+  </div>
+
+  <main>
+    <div>
+      <section class="card">
+        <p class="eyebrow">Plan your ride</p>
+        <div class="tickets" id="tickets"></div>
+        <p class="sub-eyebrow">Fare dodgers — try to ride for free</p>
+        <div class="tickets" id="dodgers"></div>
+        <label for="query">QUERY</label>
+        <textarea id="query" rows="8" spellcheck="false"></textarea>
+        <label for="variables">VARIABLES (JSON)</label>
+        <textarea id="variables" rows="2" spellcheck="false">{}</textarea>
+        <div class="actions">
+          <button class="btn quote" id="quote">Check the fare</button>
+          <button class="btn pay" id="pay">Pay &amp; ride →</button>
+        </div>
+      </section>
+      <section class="card">
+        <p class="eyebrow">Fare chart</p>
+        <div class="chart" id="chart"></div>
+        <p class="note">Lists multiply: <code>search(first: 2)</code> pays the hit price twice, and each hit's snippet too. Interfaces charge their most expensive possible type.</p>
+        <details><summary>Show the schema (SDL)</summary><pre id="sdl"></pre></details>
+      </section>
+    </div>
+    <section class="card">
+      <p class="eyebrow">Your journey</p>
+      <div class="journey" id="journey">
+        <div class="empty"><div class="big">The meter is waiting.</div>Pick a ride, then check the fare or pay and ride.</div>
+      </div>
+    </section>
+  </main>
+</div>
+
 <script>
 const MODE = '__MODE__'
 const SCHEMA = __SCHEMA__
-const presets = [
-  ['Free field', '{ hello }'],
-  ['Weather · 0.001', '{ weather(city: "Denver") { temperature } }'],
-  ['Search, 2 hits', '{ search(query: "tempo", first: 2) { title snippet } }'],
-  ['Relay connection', '{ users(first: 20) { edges { node { name email } } } }'],
-  ['Nested list', '{ weather(city: "Denver") { hourly(limit: 6) { hour detail } } }'],
-  ['Interface: worst case', '{ node(id: "a1") { id ... on Article { title } } }'],
+const rides = [
+  ['Free hello', '{ hello }', 'free'],
+  ['Weather', '{ weather(city: "Denver") { temperature } }'],
+  ['Search · 2 hits', '{ search(query: "tempo", first: 2) { title snippet } }'],
+  ['Users · first 20', '{ users(first: 20) { edges { node { name email } } } }'],
+  ['Hourly forecast', '{ weather(city: "Denver") { hourly(limit: 6) { hour detail } } }'],
+  ['Mystery node', '{ node(id: "a1") { id ... on Article { title } } }'],
   ['Same field twice', '{ weather(city: "Denver") { temperature } ...W }\nfragment W on Query { weather(city: "Denver") { temperature } }'],
-  ['Attack: first: -5', '{ search(query: "x", first: -5) { snippet } }', true],
-  ['Attack: fragment bomb', bomb(), true],
+]
+const dodgers = [
+  ['Negative page', '{ search(query: "x", first: -5) { snippet } }', 'A resolver doing items.slice(0, -5) would hand over almost everything for free.'],
+  ['Fragment bomb', bomb(), 'Each fragment doubles the last: 33 million spreads to make the pricer hang. FareQL collects fields like the executor, so it costs one weather.'],
+  ['Null page size', '{ search(query: "x", first: null) { snippet } }', 'Many servers read null as "no limit", so FareQL charges the maximum page size.'],
 ]
 function bomb() {
   const f = ['fragment F0 on Query { weather(city: "x") { temperature } }']
@@ -115,83 +256,161 @@ function bomb() {
   return `{ ...F25 }\n${f.join('\n')}`
 }
 const $ = (id) => document.getElementById(id)
-const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c])
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c])
 const json = (v) => esc(JSON.stringify(v, null, 2))
+const moderato = MODE === 'moderato'
 
-$('mode').textContent = MODE === 'moderato' ? 'Moderato testnet' : 'Demo payments · no money'
-$('mode').className = `badge ${MODE}`
-$('sdl').innerHTML = esc(SCHEMA).replace(/(@price\(amount: &quot;[^&]+&quot;\))/g, '<span class="price">$1</span>')
-for (const [name, q, attack] of presets) {
-  const b = document.createElement('button')
-  b.textContent = name
-  if (attack) b.className = 'attack'
-  b.onclick = () => { $('query').value = q; $('variables').value = '{}' }
-  $('presets').append(b)
+$('mode').textContent = moderato ? '● Moderato testnet' : '● Demo payments · no money moves'
+$('mode').className = `chip ${MODE}`
+$('sdl').textContent = SCHEMA
+
+// Fare chart from the SDL
+;(() => {
+  const rows = []
+  let type = ''
+  for (const line of SCHEMA.split('\n')) {
+    const t = line.match(/^\s*(?:type|interface)\s+(\w+)/)
+    if (t) {
+      type = t[1]
+      const p = line.match(/@price\(amount: "([^"]+)"\)/)
+      if (p) rows.push([`any ${type}`, p[1], 'type'])
+      continue
+    }
+    const f = line.match(/^\s*(\w+)[^:]*:.*@price\(amount: "([^"]+)"\)/)
+    if (f) rows.push([`${type}.${f[1]}`, f[2], 'field'])
+  }
+  $('chart').innerHTML = rows.map(([name, amt, kind]) =>
+    `<div class="row"><code>${esc(name)}</code>${kind === 'type' ? '<span class="kind">type</span>' : ''}<span class="lead"></span><span class="amt">${esc(amt)}</span></div>`).join('') +
+    `<div class="row"><code>everything else</code><span class="lead"></span><span class="amt" style="background:var(--mint-soft);color:var(--mint)">free</span></div>`
+})()
+
+function addTickets(el, list, cls) {
+  for (const [name, q, extra] of list) {
+    const b = document.createElement('button')
+    b.className = `ticket ${cls || (extra === 'free' ? 'free' : '')}`
+    b.innerHTML = esc(name)
+    b.onclick = () => {
+      document.querySelectorAll('.ticket').forEach((x) => x.classList.remove('active'))
+      b.classList.add('active')
+      $('query').value = q
+      $('variables').value = '{}'
+      dodgeNote = cls === 'dodge' ? extra : ''
+    }
+    el.append(b)
+  }
 }
-$('query').value = presets[2][1]
+let dodgeNote = ''
+addTickets($('tickets'), rides)
+addTickets($('dodgers'), dodgers, 'dodge')
+$('query').value = rides[2][1]
 
-const statusPill = (s) => `<span class="pill ${s === 402 ? 's4p' : s < 300 ? 's2' : 's4'}">${s} ${s === 402 ? 'Payment Required' : s < 300 ? 'OK' : 'Refused'}</span>`
+// meter
+let shown = 0
+function setFare(target, decimals = 6) {
+  const start = shown, t0 = performance.now(), dur = 700
+  const tick = (now) => {
+    const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3)
+    shown = start + (target - start) * e
+    $('fare').textContent = shown.toFixed(decimals)
+    if (k < 1) requestAnimationFrame(tick)
+  }
+  requestAnimationFrame(tick)
+  setTimeout(() => { shown = target; $('fare').textContent = target.toFixed(decimals) }, dur + 60)
+}
+function lamp(state, text) { $('lamp').className = `lamp ${state}`; $('lampText').textContent = text }
+function meterFoot(tags) { $('meterFoot').innerHTML = tags.map((t) => `<span class="tag">${esc(t)}</span>`).join('') }
 
-function priceBlock(price) {
-  if (!price) return ''
-  const rows = price.breakdown.map((b) => `<tr><td><code>${esc(b.path)}</code></td><td class="num-c">${esc(b.unitAmount)}</td><td class="num-c">× ${esc(b.count)}</td><td class="num-c">${esc(b.amount)}</td></tr>`).join('')
-  return `<div class="price-big">${esc(price.amount)} <small>tokens · ${price.decimals} decimals</small></div>
-    <table><thead><tr><th>Field</th><th class="num-c">Unit</th><th class="num-c">Count</th><th class="num-c">Amount</th></tr></thead><tbody>${rows}</tbody></table>`
+// route
+function route(states) {
+  document.querySelectorAll('.stop').forEach((s, i) => { s.className = `stop ${states[i] || ''}` })
+  const last = states.reduce((m, s, i) => (s === 'done' || s === 'active' ? i : m), 0)
+  $('routeFill').style.width = `${(last / 3) * 75}%`
 }
 
-function challengeBlock(c, raw) {
-  if (!c) return ''
-  const scope = c.scope
-  return `<dl class="kv">
-      <dt>method / intent</dt><dd>${esc(c.method)} / ${esc(c.intent)}</dd>
-      <dt>realm</dt><dd>${esc(c.realm)}</dd>
-      <dt>amount</dt><dd>${esc(c.request && c.request.amount)}</dd>
-      <dt>scope</dt><dd>${esc(scope || '')}</dd>
-      <dt>expires</dt><dd>${esc(c.expires || '')}</dd>
-    </dl>
-    <p class="note">The scope binds this Challenge to this exact operation and variables. A Credential for it can't pay for any other query.</p>
-    <details><summary>WWW-Authenticate header</summary><pre>${esc(raw || '')}</pre></details>`
-}
+const statusClass = (s) => (s === 402 ? 'st-402' : s < 300 ? 'st-200' : 'st-4xx')
 
 function render(result) {
-  const t = $('timeline')
-  if (result.error) { t.innerHTML = `<p class="err">${esc(result.error)}</p>`; return }
-  t.innerHTML = result.steps.map((s, i) => {
-    const head = `<div class="step-head"><span class="num">${i + 1}</span><span class="step-title">${esc(s.label)}</span>${s.status ? statusPill(s.status) : ''}</div>`
-    if (s.kind === 'credential') {
-      return `<div class="step">${head}<p class="note">The client signs the Challenge (here with the demo method; on Tempo it is a stablecoin transfer) and resends the same request with:</p><pre>Authorization: ${esc((s.credential || '').slice(0, 140))}…</pre></div>`
-    }
-    const errors = s.body && s.body.errors
-    const price = errors && errors[0] && errors[0].extensions && errors[0].extensions.price
-    let extra = ''
-    if (s.status === 402) {
-      extra = priceBlock(price) + challengeBlock(s.challenge, s.headers['www-authenticate'])
-      if (MODERATO()) extra += `<p class="note">Pay this on Moderato with the mppx CLI:</p><pre>npx mppx ${location.origin}/graphql -X POST -H 'content-type: application/json' \\\n  -d '${esc(JSON.stringify({ query: $('query').value }))}'</pre>`
-    } else if (s.status >= 400) {
-      extra = `<p class="err">${esc(errors ? errors.map((e) => `${e.extensions && e.extensions.code ? `[${e.extensions.code}] ` : ''}${e.message}`).join('\n') : 'Refused')}</p><p class="note">Refused before any Challenge: nothing was charged and nothing ran.</p>`
-    } else {
-      if (s.receipt) {
-        extra += `<dl class="kv"><dt>receipt</dt><dd>${esc(s.receipt.method)} · ${esc(s.receipt.status)} · ${esc(s.receipt.reference)}</dd><dt>cache-control</dt><dd>${esc(s.headers['cache-control'] || '')}</dd></dl>`
-      } else if (s.kind === 'request') {
-        extra += '<p class="note">Free operation: it ran without any payment.</p>'
-      }
-      extra += `<pre>${json(s.body && s.body.data !== undefined ? { data: s.body.data } : s.body)}</pre>`
-    }
-    return `<div class="step">${head}${extra}<details><summary>Raw response</summary><pre>${json({ status: s.status, headers: s.headers, body: s.body })}</pre></details></div>`
-  }).join('')
+  const j = $('journey')
+  if (result.error) { j.innerHTML = `<p class="err">${esc(result.error)}</p>`; return }
+  const [first, , paid] = result.steps
+  const errors = first.body && first.body.errors
+  const price = errors && errors[0] && errors[0].extensions && errors[0].extensions.price
+  const cards = []
+
+  if (first.status === 402) {
+    setFare(Number(price.amount), Math.max(4, String(price.amount).split('.')[1]?.length || 0))
+    lamp('on', 'FARE DUE')
+    meterFoot([`${price.breakdown.length} priced field${price.breakdown.length === 1 ? '' : 's'}`, `${first.challenge?.method}/${first.challenge?.intent}`, `realm ${first.challenge?.realm}`])
+    const rows = price.breakdown.map((b) => `<tr><td>${esc(b.path)}</td><td class="r">${esc(b.unitAmount)}</td><td class="r">× ${esc(b.count)}</td><td class="r">${esc(b.amount)}</td></tr>`).join('')
+    cards.push(`<div class="slip quote">
+      <div class="slip-head"><span class="status st-402">402 Payment Required</span><h3>Fare quote</h3></div>
+      <div class="fare">${esc(price.amount)}<small>tokens</small></div>
+      <table><thead><tr><th>Field</th><th class="r">Unit</th><th class="r">Rides</th><th class="r">Fare</th></tr></thead><tbody>${rows}</tbody>
+      <tfoot><tr><td>Total</td><td></td><td></td><td class="r">${esc(price.amount)}</td></tr></tfoot></table>
+      <dl class="kv"><dt>challenge</dt><dd>${esc(first.challenge?.id?.slice(0, 22))}…</dd><dt>scope</dt><dd><span class="scope">${esc(first.challenge?.scope)}</span></dd><dt>expires</dt><dd>${esc(first.challenge?.expires)}</dd></dl>
+      <div class="why">${dodgeNote ? `<b>Dodge failed.</b> ${esc(dodgeNote)}` : "The scope ties this Challenge to this exact query and its variables. A ticket bought for this ride can't be used on any other."}</div>
+      ${moderato ? `<p class="note">Pay on Moderato with the mppx CLI:</p><pre>npx mppx ${esc(location.origin)}/graphql -X POST -H 'content-type: application/json' \\\n  -d '${esc(JSON.stringify({ query: $('query').value }))}'</pre>` : ''}
+      <details><summary>WWW-Authenticate</summary><pre>${esc(first.headers['www-authenticate'])}</pre></details>
+    </div>`)
+  } else if (first.status >= 400) {
+    setFare(0); lamp('', 'REFUSED'); meterFoot(['nothing charged', 'nothing ran'])
+    const e = errors && errors[0]
+    cards.push(`<div class="slip refused"><span class="stamp">BLOCKED</span>
+      <div class="slip-head"><span class="status st-4xx">${first.status}</span><h3>Turned away at the gate</h3></div>
+      <p class="err">${e?.extensions?.code ? `<span class="code-chip">${esc(e.extensions.code)}</span> ` : ''}${esc(e ? e.message : 'Refused')}</p>
+      ${dodgeNote ? `<div class="why">${esc(dodgeNote)}</div>` : ''}
+    </div>`)
+    route(['done', 'stopped', '', ''])
+  } else {
+    setFare(0); lamp('ok', 'FREE RIDE'); meterFoot(['no payment needed'])
+    cards.push(`<div class="slip receipt"><span class="stamp paid">FREE</span>
+      <div class="slip-head"><span class="status st-200">200 OK</span><h3>Free ride</h3></div>
+      ${dodgeNote ? `<div class="why">${esc(dodgeNote)}</div>` : ''}
+      <pre>${json({ data: first.body?.data })}</pre></div>`)
+    route(['done', 'done', 'done', 'done'])
+  }
+
+  if (first.status === 402 && !paid) route(['done', 'active', '', ''])
+  if (paid) {
+    const cred = result.steps[1].credential || ''
+    cards.push(`<div class="slip credential">
+      <div class="slip-head"><h3>Ticket punched</h3></div>
+      <p class="note">The mppx client signs the Challenge${moderato ? '' : ' (demo method, no money)'} and resends the same request with:</p>
+      <pre>Authorization: ${esc(cred.slice(0, 120))}…</pre></div>`)
+    lamp('ok', 'PAID')
+    cards.push(`<div class="slip receipt"><span class="stamp paid">PAID</span>
+      <div class="slip-head"><span class="status ${statusClass(paid.status)}">${paid.status} OK</span><h3>Enjoy the ride</h3></div>
+      <dl class="kv"><dt>receipt</dt><dd>${esc(paid.receipt?.method)} · ${esc(paid.receipt?.status)} · ${esc(paid.receipt?.reference)}</dd><dt>time</dt><dd>${esc(paid.receipt?.timestamp)}</dd><dt>cache-control</dt><dd>${esc(paid.headers['cache-control'])}</dd></dl>
+      <pre>${json({ data: paid.body?.data })}</pre></div>`)
+    route(['done', 'done', 'done', 'done'])
+  }
+  j.innerHTML = cards.join('')
 }
-const MODERATO = () => MODE === 'moderato'
 
 async function run(pay) {
   let variables = {}
   try { variables = JSON.parse($('variables').value || '{}') } catch { render({ error: 'Variables must be JSON' }); return }
-  $('timeline').innerHTML = '<div class="empty">Running…</div>'
-  const r = await fetch('/demo/run', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ query: $('query').value, variables, pay }) })
-  render(await r.json())
+  for (const b of [$('quote'), $('pay')]) b.disabled = true
+  route(['active', '', '', '']); lamp('', 'RUNNING')
+  try {
+    const r = await fetch('/demo/run', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ query: $('query').value, variables, pay }) })
+    render(await r.json())
+  } finally {
+    for (const b of [$('quote'), $('pay')]) b.disabled = false
+  }
 }
 $('quote').onclick = () => run(false)
-$('pay').onclick = () => run(true)
-if (MODERATO()) $('pay').textContent = 'Pay with npx mppx (see step 1)'
+$('pay').onclick = () => run(!moderato)
+if (moderato) $('pay').textContent = 'Pay with npx mppx ↓'
+route(['', '', '', ''])
+// Deep links: #ride=3&pay, #dodge=0 (runs that example on load)
+;(() => {
+  const h = new URLSearchParams(location.hash.slice(1))
+  const pick = h.has('dodge') ? $('dodgers').children[Number(h.get('dodge'))] : h.has('ride') ? $('tickets').children[Number(h.get('ride'))] : null
+  if (!pick) return
+  pick.click()
+  run(h.has('pay') && !moderato)
+})()
 </script>
 </body>
 </html>
