@@ -22,6 +22,8 @@
 
 > **Try it in the browser at [fareql.pages.dev](https://fareql.pages.dev).** Type a query and the meter quotes it live. Pay with a demo method and you get the data and a receipt. No money moves.
 > Shortcuts: [pay for a search](https://fareql.pages.dev/#ride=2&pay) · [slide a page size](https://fareql.pages.dev/#ride=7) · [try to ride for free](https://fareql.pages.dev/#dodge=0)
+>
+> **Verified on Tempo's Moderato testnet:** a real `tempo.charge` payment through FareQL, settled on chain: [`0x4fcba990…d346`](https://explore.testnet.tempo.xyz/tx/0x4fcba9906e072436a22ed6feb6ee470dadc65c130d86d4f8f1582f39c131d346).
 
 ## Why FareQL
 
