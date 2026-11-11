@@ -1,5 +1,6 @@
 import { type ApolloServerPlugin, type BaseContext, type HTTPGraphQLRequest, HeaderMap } from '@apollo/server'
 import { GraphQLError } from 'graphql'
+import { checkTiers, errorStatus } from './identity.js'
 import { type FareOptions, chargeOperations, paymentError, pricingErrorBody, receiptHeaders } from './core.js'
 import { PricingError, priceOperation } from './price.js'
 
@@ -50,6 +51,7 @@ const fail = (message: string, extensions: Record<string, unknown>, status: numb
  * Operations run in-process with `server.executeOperation()` have no HTTP request and are not charged.
  */
 export function fareqlApolloPlugin<TContext extends BaseContext = BaseContext>(options: FareqlApolloOptions): ApolloServerPlugin<TContext> {
+  checkTiers(options)
   const exposePrice = options.exposePrice ?? true
   // Pieces of one HTTP batch share the same headers object; count the priced ones per request.
   const pricedPieces = new WeakMap<object, number>()
@@ -84,7 +86,7 @@ export function fareqlApolloPlugin<TContext extends BaseContext = BaseContext>(o
               return
             case 'rejected': {
               const body = pricingErrorBody(outcome.error, exposePrice)
-              throw fail(body.message, body.extensions, 400)
+              throw fail(body.message, body.extensions, errorStatus(outcome.error))
             }
             case 'payment-required': {
               const headers = new HeaderMap()

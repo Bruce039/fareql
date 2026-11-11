@@ -1,3 +1,4 @@
+import { checkTiers, errorStatus } from './identity.js'
 import { type DocumentNode, type ExecutionResult, GraphQLError, type GraphQLSchema } from 'graphql'
 import type { Plugin } from 'graphql-yoga'
 import {
@@ -75,6 +76,7 @@ export function useFareql(options: UseFareqlOptions): Plugin {
   const batches = new WeakSet<Request>()
   const allowed = new WeakMap<Request, number>() // operations of a request that passed the gate
   const paramsOf = new WeakMap<Request, Params[]>()
+  checkTiers(options)
   const documents = createDocumentCache(options)
   const exposePrice = options.exposePrice ?? true
   const maxEvents = options.maxSubscriptionEvents ?? 100
@@ -87,8 +89,10 @@ export function useFareql(options: UseFareqlOptions): Plugin {
     switch (outcome.status) {
       case 'free':
         return undefined
-      case 'rejected':
-        return reject(outcome.error)
+      case 'rejected': {
+        const body = pricingErrorBody(outcome.error, exposePrice)
+        return failure(body.message, body.extensions, errorStatus(outcome.error))
+      }
       case 'payment-required': {
         const headers: Record<string, string> = {}
         outcome.challenge.headers.forEach((value, key) => {

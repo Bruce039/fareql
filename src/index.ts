@@ -23,7 +23,16 @@ export {
   type FareOptions,
   type OperationInfo,
   type OperationInput,
+  type ChargedPrice,
 } from './core.js'
+export {
+  IdentityError,
+  type IdentityVerification,
+  type IdentityVerifier,
+  type ResolvedTier,
+  type Tier,
+  type TierOptions,
+} from './identity.js'
 export {
   createPaymentGate,
   withPayment,

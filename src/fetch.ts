@@ -1,4 +1,5 @@
 import type { GraphQLSchema } from 'graphql'
+import { checkTiers, errorStatus } from './identity.js'
 import {
   type DocumentLimits,
   type FareOptions,
@@ -262,6 +263,7 @@ function apqHash(params: GraphQLParams): string | undefined {
  * GraphQL. It fails closed: anything it cannot read or price is answered, never executed.
  */
 export function createPaymentGate(options: GateOptions): (request: Request) => Promise<GateResult> {
+  checkTiers(options)
   const documents = createDocumentCache(options)
   const exposePrice = options.exposePrice ?? true
   const maxBatchSize = options.maxBatchSize ?? 10
@@ -336,7 +338,7 @@ export function createPaymentGate(options: GateOptions): (request: Request) => P
       case 'free':
         return { status: 'free', price: outcome.price }
       case 'rejected':
-        return reject(400, [pricingErrorBody(outcome.error, exposePrice)], outcome.error)
+        return reject(errorStatus(outcome.error), [pricingErrorBody(outcome.error, exposePrice)], outcome.error)
       case 'payment-required':
         return { status: 'payment-required', price: outcome.price, response: await graphqlChallenge(outcome.challenge, outcome.price, exposePrice) }
       case 'paid':

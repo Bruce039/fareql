@@ -20,6 +20,7 @@ import {
   priceOperation,
   selectOperation,
 } from './price.js'
+import { ANONYMOUS, IdentityError, type ResolvedTier, type TierOptions, applyTier, resolveTier, tierPrices } from './identity.js'
 
 /** Options passed to the charge factory; maps 1:1 onto `mppx.charge({ ... })`. */
 export type ChargeOptions = {
@@ -52,7 +53,7 @@ export type OperationInfo = {
   operationType: OperationTypeNode
 }
 
-export type FareOptions = {
+export type FareOptions = TierOptions & {
   charge: ChargeFactory
   pricing?: PricingOptions
   /** Challenge description. Default: `GraphQL <operation name or type>`. */
@@ -61,13 +62,23 @@ export type FareOptions = {
   exposePrice?: boolean
 }
 
+/** The price actually charged. With tiers, `amount`/`units` are after the tier's multiplier. */
+export type ChargedPrice = OperationPrice & {
+  /** The identity tier the request resolved to (`anonymous` when none matched). Set when tiers are configured. */
+  tier?: string
+  /** The price before the tier's multiplier. Set when tiers are configured. */
+  baseAmount?: string
+  /** What this operation costs in each configured tier. Set when tiers are configured. */
+  tiers?: { tier: string; amount: string }[]
+}
+
 export type ChargeOutcome =
   /** Nothing to charge. Execute normally. */
-  | { status: 'free'; price: OperationPrice }
+  | { status: 'free'; price: ChargedPrice; tier: ResolvedTier }
   /** Send `challenge` (an MPP 402) to the client. */
-  | { status: 'payment-required'; price: OperationPrice; scope: string; challenge: Response }
+  | { status: 'payment-required'; price: ChargedPrice; tier: ResolvedTier; scope: string; challenge: Response }
   /** Paid. Execute, then pass the response through `withReceipt`. */
-  | { status: 'paid'; price: OperationPrice; scope: string; withReceipt: (response: Response) => Response }
+  | { status: 'paid'; price: ChargedPrice; tier: ResolvedTier; scope: string; withReceipt: (response: Response) => Response }
   /** The operation could not be priced; it must not run. */
   | { status: 'rejected'; error: PricingError }
 
@@ -158,7 +169,7 @@ export async function chargeOperations(
   precomputed?: readonly OperationPrice[],
 ): Promise<ChargeOutcome> {
   const decimals = options.pricing?.decimals ?? 6
-  let price: OperationPrice
+  let price: ChargedPrice
   let info: OperationInfo
   try {
     const prices =
@@ -175,7 +186,29 @@ export async function chargeOperations(
     if (error instanceof PricingError) return { status: 'rejected', error }
     throw error
   }
-  if (price.units === 0n) return { status: 'free', price }
+  if (price.units === 0n) return { status: 'free', price, tier: ANONYMOUS }
+
+  // Identity tiers: verified once per request, here. The tier is bound into the scope below, so a
+  // Credential issued for a cheaper tier cannot be used without that tier's proof on the retry.
+  let tier = ANONYMOUS
+  if (options.tiers && options.tiers.length > 0) {
+    try {
+      tier = await resolveTier(request, options)
+    } catch (error) {
+      if (error instanceof IdentityError) return { status: 'rejected', error }
+      throw error
+    }
+    const units = applyTier(price.units, tier, options.tiers)
+    price = {
+      ...price,
+      amount: formatUnits(units, decimals),
+      units,
+      tier: tier.name,
+      baseAmount: price.amount,
+      tiers: tierPrices(price.units, decimals, options.tiers),
+    } satisfies ChargedPrice
+    if (units === 0n) return { status: 'free', price, tier }
+  }
 
   let scope: string
   try {
@@ -184,24 +217,26 @@ export async function chargeOperations(
     if (error instanceof PricingError) return { status: 'rejected', error }
     throw error
   }
+  if (tier !== ANONYMOUS) scope = `${scope}:tier=${tier.name}`
   const description =
     options.describe?.(info, price) ??
     (operations.length > 1 ? `GraphQL batch of ${operations.length} operations` : `GraphQL ${info.operationName ?? info.operationType}`)
   const result = await options.charge({ amount: price.amount, scope, description })(request)
-  if (result.status === 402) return { status: 'payment-required', price, scope, challenge: result.challenge }
-  return { status: 'paid', price, scope, withReceipt: result.withReceipt }
+  if (result.status === 402) return { status: 'payment-required', price, tier, scope, challenge: result.challenge }
+  return { status: 'paid', price, tier, scope, withReceipt: result.withReceipt }
 }
 
 // ── GraphQL-shaped error bodies ───────────────────────────────────────────────
 
 export type GraphQLErrorBody = { message: string; extensions: Record<string, unknown> }
 
-export function priceExtension(price: OperationPrice) {
+export function priceExtension(price: ChargedPrice) {
   return {
     amount: price.amount,
     decimals: price.decimals,
     breakdown: price.breakdown,
     ...(price.breakdownTruncated ? { breakdownTruncated: true } : {}),
+    ...(price.tier !== undefined ? { tier: price.tier, baseAmount: price.baseAmount, tiers: price.tiers } : {}),
   }
 }
 

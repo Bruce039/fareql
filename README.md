@@ -173,6 +173,27 @@ Other options:
 
 `priceOperation()` is exported for quotes and tests.
 
+## Identity tiers
+
+Charge callers less the more they prove about themselves. Any request-stage `mppx/identity` verifier works (`Identity.from` over your API keys, `EmailOtp.Server.verifier`, `WebBotAuth.Server.verifier`, `Identity.anyOf(...)`), or your own object with a `verify(request)` method.
+
+```ts
+useFareql({
+  charge: (o) => mppx.charge(o),
+  tiers: [ // best first: the first verifier that accepts the request sets the price
+    { name: 'member', verifier: apiKeys, multiplier: '0.25' },
+    { name: 'verified', verifier: email, multiplier: '0.5' },
+  ],
+  // anonymous: false, // require a proof for priced operations
+})
+```
+
+- Callers without a proof pay the base price. `multiplier: '0'` makes priced operations free for that tier. Tier prices round up to the smallest unit.
+- A proof that is presented but refused is answered with its own status (`401`, `403`, or `503` when the issuer is down) and is never charged at a dearer tier.
+- Each verifier runs once per request. The tier is bound into the Challenge scope, so a Credential bought at a tier's price is refused when the retry drops that tier's proof.
+- `maxPrice` applies to the base price, so every tier has the same complexity limit.
+- 402 bodies add `tier`, `baseAmount` and the price in each tier (`tiers`) unless `exposePrice` is `false`.
+
 ## What clients get
 
 ```http
@@ -228,6 +249,7 @@ In code, `mppx/client` wraps `fetch`, so 402s are paid and retried automatically
 | `pricing` | See [Pricing rules](#pricing-rules) |
 | `describe(op, price)` | Challenge description. Default: `GraphQL <operation name>` |
 | `exposePrice` | Include the price breakdown in 402 bodies. Default: `true` |
+| `tiers`, `anonymous` | See [Identity tiers](#identity-tiers) |
 
 </details>
 

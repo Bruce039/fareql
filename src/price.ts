@@ -126,6 +126,9 @@ export type PricingErrorCode =
   | 'TOO_COMPLEX'
   | 'PRICE_LIMIT_EXCEEDED'
   | 'NO_PRICES'
+  | 'UNAUTHENTICATED'
+  | 'FORBIDDEN'
+  | 'IDENTITY_UNAVAILABLE'
 
 export class PricingError extends Error {
   override name = 'PricingError'
